@@ -23,8 +23,48 @@
   };
   const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
-  const NAMES = { player: "11ai'ame", opponent: "H大好き分岐オレ" };
-  const SHORT = { player: "11ai'ame", opponent: "RIVAL" };
+  const NAMES = { player: "11ai'ame", opponent: "ONLINE PLAYER" };
+  const SHORT = { player: "11ai'ame", opponent: "ONLINE" };
+
+  /* ---------------- online room simulation ---------------- */
+  const ONLINE_NAMES = [
+    "NEXUS_07", "KAI_11", "YUNA_X", "R3D_RONIN", "MIRA_77", "ZERO_DAY",
+    "AKIRA_99", "LUMEN", "VANTA_6", "SORA_21", "KIRIN", "ECHO_404"
+  ];
+  const online = {
+    roomCode: "",
+    ownRoomCode: "",
+    opponent: "ONLINE PLAYER",
+    rooms: [],
+    connected: true,
+    started: false
+  };
+
+  function makeRoomCode() {
+    const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+    let out = "";
+    for (let i = 0; i < 4; i++) out += chars[Math.floor(Math.random() * chars.length)];
+    return out;
+  }
+
+  function makeOnlineHandle(used = []) {
+    const pool = ONLINE_NAMES.filter((n) => !used.includes(n));
+    return pool.length ? pick(pool) : `PLAYER_${Math.floor(100 + Math.random() * 900)}`;
+  }
+
+  function makeRooms() {
+    const used = [];
+    return Array.from({ length: 4 }, (_, i) => {
+      const host = makeOnlineHandle(used);
+      used.push(host);
+      return {
+        host,
+        code: makeRoomCode(),
+        state: i === 3 ? "FULL" : "OPEN",
+        ping: 8 + Math.floor(Math.random() * 40)
+      };
+    });
+  }
   const COLS = ["A", "B", "C", "D", "E", "F"];
   const ROWS = [
     { side: "opponent", kind: "spell" },
@@ -85,6 +125,16 @@
     dom.bannerSub = $("#banner-sub");
     dom.mobileDetail = $("#mobile-detail");
     dom.rulesOverlay = $("#rules-overlay");
+    dom.lobbyOverlay = $("#lobby-overlay");
+    dom.lobbyRoomList = $("#room-list");
+    dom.lobbyOwnCode = $("#own-room-code");
+    dom.lobbyNet = $("#lobby-net");
+    dom.lobbyCode = $("#lobby-code");
+    dom.lobbyResume = $("#btn-lobby-resume");
+    dom.oppName = $("#opp-name");
+    dom.oppAvatarLetter = $("#opp-avatar-letter");
+    dom.oppRole = $("#opp-role");
+    dom.footerMatchup = $("#footer-matchup");
     dom.gameover = $("#gameover-overlay");
     dom.goTitle = $("#go-title");
     dom.goKicker = $("#go-kicker");
@@ -1654,6 +1704,71 @@
     if (destCard) setTimeout(() => { destCard.style.opacity = ""; }, 430);
   }
 
+  async function animateAttack(card, fromEl, toEl) {
+    if (!fromEl || !toEl || reduceMotion) {
+      await wait(180);
+      return;
+    }
+    const from = fromEl.getBoundingClientRect();
+    const to = toEl.getBoundingClientRect();
+    if (!from.width || !to.width) {
+      await wait(180);
+      return;
+    }
+    const clone = createCardEl(card, "zone");
+    clone.classList.add("fly-card", "attack-card");
+    clone.style.left = `${from.left}px`;
+    clone.style.top = `${from.top}px`;
+    clone.style.width = `${from.width}px`;
+    clone.style.height = `${from.height}px`;
+    clone.style.margin = "0";
+    document.body.appendChild(clone);
+
+    const original = fromEl.querySelector(".card");
+    if (original) original.style.opacity = "0";
+
+    const dx = to.left + to.width / 2 - (from.left + from.width / 2);
+    const dy = to.top + to.height / 2 - (from.top + from.height / 2);
+    const direction = dx >= 0 ? 1 : -1;
+    const arc = card.owner === "player" ? -26 : 26;
+
+    const outbound = clone.animate(
+      [
+        { transform: "translate(0, 0) scale(1) rotate(0deg)", offset: 0 },
+        { transform: `translate(${dx * 0.48}px, ${dy * 0.48 + arc}px) scale(1.16) rotate(${direction * 5}deg)`, offset: 0.55 },
+        { transform: `translate(${dx}px, ${dy}px) scale(1.22) rotate(${direction * 11}deg)`, offset: 1 }
+      ],
+      { duration: 360, easing: "cubic-bezier(0.18, 0.82, 0.22, 1)", fill: "forwards" }
+    );
+    const impact = outbound.finished.catch(() => {});
+
+    impact.then(() => {
+      const cx = to.left + to.width / 2;
+      const cy = to.top + to.height / 2;
+      FX.burst(cx, cy, card.glow || "#55f4ff", 20, 5);
+      setTimeout(() => {
+        const back = clone.animate(
+          [
+            { transform: `translate(${dx}px, ${dy}px) scale(1.22) rotate(${direction * 11}deg)`, opacity: 1 },
+            { transform: `translate(${dx * 0.46}px, ${dy * 0.46 + arc * 0.4}px) scale(1.1) rotate(${-direction * 4}deg)`, opacity: 1, offset: 0.55 },
+            { transform: "translate(0, 0) scale(1) rotate(0deg)", opacity: 1 }
+          ],
+          { duration: 330, easing: "cubic-bezier(0.3, 0.9, 0.3, 1)", fill: "forwards" }
+        );
+        back.finished.catch(() => {}).finally(() => {
+          clone.remove();
+          const live = zoneElOf(card);
+          const liveCard = live && live.querySelector(".card");
+          if (liveCard) liveCard.style.opacity = "";
+          if (original && original.isConnected) original.style.opacity = "";
+        });
+      }, 210);
+    });
+
+    await impact;
+  }
+
+
   function floatAt(el, text, kind = "") {
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -1830,25 +1945,15 @@
     Sound.attack();
     render();
 
-    if (!reduceMotion && atkEl && targetEl) {
-      const a = atkEl.getBoundingClientRect();
-      const b = targetEl.getBoundingClientRect();
-      const dx = (b.left + b.width / 2 - (a.left + a.width / 2)) * 0.28;
-      const dy = (b.top + b.height / 2 - (a.top + a.height / 2)) * 0.28;
-      const cardEl = atkEl.querySelector(".card");
-      if (cardEl) {
-        cardEl.animate(
-          [
-            { transform: "translate(0,0) scale(1)" },
-            { transform: `translate(${dx}px, ${dy}px) scale(1.12)`, offset: 0.45 },
-            { transform: "translate(0,0) scale(1)" }
-          ],
-          { duration: 380, easing: "cubic-bezier(0.3, 0.9, 0.3, 1)" }
-        );
-      }
-      slashBetween(atkEl, targetEl, attackerSide === "opponent");
+    await animateAttack(attacker, atkEl, targetEl);
+    slashBetween(atkEl, targetEl, attackerSide === "opponent");
+    if (targetEl) {
+      FX.burstAt(targetEl, attackerSide === "player" ? "#55f4ff" : "#ff3ea5", 28, 6);
+      floatAt(targetEl, "STRIKE", "gold");
     }
-    await wait(360);
+    Sound.hit();
+    shakeApp();
+    await wait(220);
 
     let negated = false;
     if (!direct || target) {
@@ -1858,11 +1963,6 @@
     }
     if (state.winner) { render(); return; }
     if (negated || !isOnField(attacker)) { render(); await wait(320); return; }
-    if (isOnField(attacker)) {
-      FX.burstAt(targetEl, attackerSide === "player" ? "#55f4ff" : "#ff3ea5", 22, 5);
-      Sound.hit();
-      shakeApp();
-    }
 
     let damageSide = null;
     let damageAmount = 0;

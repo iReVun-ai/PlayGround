@@ -82,6 +82,13 @@ window.CARDS = {
     effect: "onDestroyDraw",
     desc: "If this card is destroyed by battle: draw 1 card."
   },
+  fitxi: {
+    name: "11ai'ameFitxi", jp: "イレブンアイ・アメ・フィトクシ", type: "monster",
+    atk: 2400, def: 2000, level: 4, element: "CYBER", glyph: "F",
+    colors: ["#55f4ff", "#ff3ea5"], glow: "#7cf7ff",
+    effect: "fitxi",
+    desc: "On Summon: draw 1 card and gain 500 LP. Signature card of 11ai'ame."
+  },
 
   /* ---------------- SPELLS ---------------- */
   nova: {
@@ -158,7 +165,7 @@ window.CARDS = {
 window.DECKS = {
   player: [
     "drake", "drake",
-    "hound", "hound",
+    "hound", "fitxi",
     "oracle", "oracle",
     "golem", "golem",
     "ronin",
