@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+<meta name="theme-color" content="#05060f" />
+<title>LPto0 — 24-Zone Set Summon Duel</title>
+<meta name="description" content="LPto0: a neon 24-zone card duel. Set summon, flip, attack, and drive your rival's Life Points to zero." />
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+<div id="app" class="app">
+
+  <div class="bg-layer" aria-hidden="true">
+    <div class="bg-aurora a"></div>
+    <div class="bg-aurora b"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-scan"></div>
+  </div>
+  <canvas id="fx" class="fx" aria-hidden="true"></canvas>
+
+  <header class="topbar">
+    <div class="brand">
+      <div class="brand-logo" aria-label="LPto0">
+        <span class="lp">LP</span><span class="to">to</span><span class="zero">0</span>
+      </div>
+      <div class="brand-meta">
+        <span class="brand-sub">SET SUMMON</span>
+        <span class="brand-dot"></span>
+        <span class="brand-sub alt">24-ZONE DUEL</span>
+      </div>
+    </div>
+
+    <div class="top-mid" aria-hidden="true">
+      <span class="chip">MATRIX // 6 × 4</span>
+      <span class="chip gold" id="turn-chip">TURN 01</span>
+      <span class="chip live"><i></i> LIVE</span>
+    </div>
+
+    <nav class="top-actions" aria-label="Game options">
+      <button class="btn ghost" id="btn-log" type="button" aria-label="Open duel log">
+        <span class="btn-ico">≡</span><span class="btn-txt">LOG</span>
+      </button>
+      <button class="btn ghost" id="btn-rules" type="button" aria-label="How to play">
+        <span class="btn-ico">?</span><span class="btn-txt">RULES</span>
+      </button>
+      <button class="btn ghost" id="btn-sound" type="button" aria-label="Toggle sound" aria-pressed="true">
+        <span class="btn-ico" id="sound-ico">♪</span><span class="btn-txt" id="sound-txt">SOUND ON</span>
+      </button>
+    </nav>
+  </header>
+
+  <main class="arena">
+
+    <!-- LEFT RAIL : duel feed -->
+    <aside class="rail rail-left" id="log-rail">
+      <div class="rail-head">
+        <span class="rail-kicker">LIVE FEED</span>
+        <span class="rail-rule"></span>
+        <span class="rail-count" id="log-count">00</span>
+      </div>
+      <div class="log" id="log" role="log" aria-live="polite"></div>
+      <div class="rail-foot">
+        <span class="mono">LPto0 / DUEL ENGINE v2.4</span>
+        <span class="mono dim">SYNC 100%</span>
+      </div>
+    </aside>
+
+    <!-- CENTER : the duel -->
+    <section class="duel-col" aria-label="Duel board">
+
+      <!-- OPPONENT HUD -->
+      <div class="hud opponent" id="hud-opponent">
+        <div class="avatar opp" aria-hidden="true">
+          <div class="avatar-ring"></div>
+          <span class="avatar-letter">H</span>
+          <span class="avatar-lv">LV.24</span>
+        </div>
+        <div class="hud-body">
+          <div class="hud-line">
+            <span class="hud-name">H大好き分岐オレ</span>
+            <span class="hud-role">RIVAL // SET-BREAKER</span>
+            <span class="hud-turn-flag" id="opp-turn-flag">STANDBY</span>
+          </div>
+          <div class="lp-line">
+            <div class="lp-bar" id="opp-lpbar">
+              <div class="lp-fill" id="opp-lpfill"></div>
+              <div class="lp-ticks"></div>
+              <span class="lp-label">LIFE POINTS</span>
+            </div>
+            <span class="lp-num" id="opp-lp">4000</span>
+          </div>
+        </div>
+        <div class="hud-stats">
+          <div class="stat"><b id="opp-deck">15</b><span>DECK</span></div>
+          <div class="stat"><b id="opp-hand">5</b><span>HAND</span></div>
+          <div class="stat"><b id="opp-grave">0</b><span>GY</span></div>
+        </div>
+        <div class="speech" id="opp-speech" aria-hidden="true"></div>
+      </div>
+
+      <!-- BOARD -->
+      <div class="board-shell">
+        <div class="board-corner tl"></div>
+        <div class="board-corner tr"></div>
+        <div class="board-corner bl"></div>
+        <div class="board-corner br"></div>
+
+        <div class="board" id="board" aria-label="24 zone duel matrix">
+
+          <div class="row" data-side="opponent" data-kind="spell">
+            <span class="row-label"><em>SPELL</em><i>TRAP</i></span>
+            <div class="zones" data-side="opponent" data-kind="spell"></div>
+          </div>
+
+          <div class="row" data-side="opponent" data-kind="monster">
+            <span class="row-label"><em>MONSTER</em><i>ZONE</i></span>
+            <div class="zones" data-side="opponent" data-kind="monster"></div>
+          </div>
+
+          <div class="divider" aria-hidden="true">
+            <span class="divider-line"></span>
+            <div class="turn-core">
+              <span class="turn-kicker" id="turn-kicker">TURN 01</span>
+              <strong class="turn-phase" id="turn-phase">YOUR TURN</strong>
+            </div>
+            <span class="divider-line"></span>
+            <span class="divider-code">LPto0 // 24-ZONE SET SUMMON MATRIX</span>
+          </div>
+
+          <div class="row" data-side="player" data-kind="monster">
+            <span class="row-label"><em>MONSTER</em><i>ZONE</i></span>
+            <div class="zones" data-side="player" data-kind="monster"></div>
+          </div>
+
+          <div class="row" data-side="player" data-kind="spell">
+            <span class="row-label"><em>SPELL</em><i>TRAP</i></span>
+            <div class="zones" data-side="player" data-kind="spell"></div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- PLAYER HUD -->
+      <div class="hud player" id="hud-player">
+        <div class="avatar you" aria-hidden="true">
+          <div class="avatar-ring"></div>
+          <span class="avatar-letter">11</span>
+          <span class="avatar-lv">LV.11</span>
+        </div>
+        <div class="hud-body">
+          <div class="hud-line">
+            <span class="hud-name">11ai'ame</span>
+            <span class="hud-role">YOU // SET-SUMMON ACE</span>
+            <span class="hud-turn-flag" id="you-turn-flag">YOUR TURN</span>
+          </div>
+          <div class="lp-line">
+            <div class="lp-bar" id="you-lpbar">
+              <div class="lp-fill" id="you-lpfill"></div>
+              <div class="lp-ticks"></div>
+              <span class="lp-label">LIFE POINTS</span>
+            </div>
+            <span class="lp-num" id="you-lp">4000</span>
+          </div>
+        </div>
+        <div class="hud-stats">
+          <div class="stat"><b id="you-deck">15</b><span>DECK</span></div>
+          <div class="stat"><b id="you-hand">5</b><span>HAND</span></div>
+          <div class="stat"><b id="you-grave">0</b><span>GY</span></div>
+        </div>
+        <button class="end-turn" id="btn-end" type="button" title="End turn (E)">
+          <span class="end-turn-main">END TURN</span>
+          <span class="end-turn-key">E</span>
+        </button>
+        <div class="speech you" id="you-speech" aria-hidden="true"></div>
+      </div>
+
+      <!-- ACTION STRIP -->
+      <div class="action-strip" id="action-strip">
+        <div class="action-status">
+          <span class="status-dot" id="status-dot"></span>
+          <span id="status-text">Select a card from your hand.</span>
+        </div>
+        <div class="action-buttons" id="action-buttons"></div>
+      </div>
+
+      <div class="mobile-detail" id="mobile-detail" hidden></div>
+
+      <!-- HAND -->
+      <section class="hand-zone" aria-label="Your hand">
+        <div class="hand-head">
+          <span class="hand-title">YOUR HAND</span>
+          <span class="hand-count" id="hand-count">05</span>
+          <span class="hand-hint" id="hand-hint">CLICK A CARD TO INSPECT</span>
+        </div>
+        <div class="hand" id="hand"></div>
+        <div class="hand-floor" aria-hidden="true"></div>
+      </section>
+
+    </section>
+
+    <!-- RIGHT RAIL : inspector -->
+    <aside class="rail rail-right">
+      <div class="rail-head">
+        <span class="rail-kicker" id="inspect-kicker">CARD ANALYSER</span>
+        <span class="rail-rule"></span>
+        <span class="rail-count" id="inspect-code">IDLE</span>
+      </div>
+      <div class="inspector" id="inspector"></div>
+    </aside>
+
+  </main>
+
+  <footer class="footer">
+    <span><b>11ai'ame</b> vs <b>H大好き分岐オレ</b></span>
+    <span class="dot"></span>
+    <span>SET SUMMON · FLIP · OVERDRIVE</span>
+    <span class="dot"></span>
+    <span>LP 4000 → 0</span>
+  </footer>
+
+  <!-- TURN BANNER -->
+  <div class="banner" id="banner" aria-hidden="true">
+    <div class="banner-rule"></div>
+    <div class="banner-text" id="banner-text">DUEL START</div>
+    <div class="banner-sub" id="banner-sub">11ai'ame vs H大好き分岐オレ</div>
+    <div class="banner-rule"></div>
+  </div>
+
+  <!-- RULES MODAL -->
+  <div class="overlay" id="rules-overlay" role="dialog" aria-modal="true" aria-labelledby="rules-title" hidden>
+    <div class="modal rules-modal">
+      <button class="modal-close" id="rules-close" type="button" aria-label="Close rules">×</button>
+      <span class="modal-kicker">DUEL MANUAL // v2.4</span>
+      <h1 class="modal-title" id="rules-title">LP<span>to</span>0</h1>
+      <p class="modal-lead">A 24-zone card duel. Break the set, flip the board, and drive your rival's Life Points to zero.</p>
+
+      <div class="rules-grid">
+        <div class="rule">
+          <span class="rule-num">01</span>
+          <h3>THE MATRIX</h3>
+          <p>Each duelist controls <b>6 Monster Zones</b> and <b>6 Spell / Trap Zones</b> — 24 zones in total. Six columns, four rows.</p>
+        </div>
+        <div class="rule">
+          <span class="rule-num">02</span>
+          <h3>SET SUMMON</h3>
+          <p>Once per turn, either <b>Summon</b> a monster face-up in Attack Position, or <b>Set</b> it face-down in Defense Position. Setting grants <b>+200 LP</b>.</p>
+        </div>
+        <div class="rule">
+          <span class="rule-num">03</span>
+          <h3>FLIP &amp; FIGHT</h3>
+          <p>Click one of your face-down monsters to <b>Flip Summon</b> it. Flip effects fire. Face-up Attack monsters may attack once each.</p>
+        </div>
+        <div class="rule">
+          <span class="rule-num">04</span>
+          <h3>DAMAGE</h3>
+          <p>Attack a monster: higher ATK wins, and the difference hits the loser's LP. Attack a Defense monster with higher ATK and destroy it. No monsters? Attack directly.</p>
+        </div>
+        <div class="rule">
+          <span class="rule-num">05</span>
+          <h3>SPELLS &amp; TRAPS</h3>
+          <p>Cast Spells from your hand into an empty Spell Zone. Set Traps face-down — they trigger automatically when your rival attacks.</p>
+        </div>
+        <div class="rule">
+          <span class="rule-num">06</span>
+          <h3>WIN CONDITION</h3>
+          <p>Reduce your opponent from <b>4000 LP to 0</b>, or make them draw from an empty deck. Last duelist standing wins.</p>
+        </div>
+      </div>
+
+      <div class="rules-keys">
+        <span><kbd>CLICK</kbd> select / place</span>
+        <span><kbd>E</kbd> end turn</span>
+        <span><kbd>ESC</kbd> cancel</span>
+        <span><kbd>?</kbd> rules</span>
+      </div>
+      <button class="btn primary wide" id="rules-play" type="button">RETURN TO DUEL</button>
+    </div>
+  </div>
+
+  <!-- GAME OVER -->
+  <div class="overlay gameover" id="gameover-overlay" role="dialog" aria-modal="true" aria-labelledby="go-title" hidden>
+    <div class="gameover-inner">
+      <span class="go-kicker" id="go-kicker">DUEL COMPLETE</span>
+      <h1 class="go-title" id="go-title">VICTORY</h1>
+      <p class="go-sub" id="go-sub">H大好き分岐オレ // LP 0</p>
+      <div class="go-stats">
+        <div><b id="go-turns">7</b><span>TURNS</span></div>
+        <div><b id="go-damage">3800</b><span>DAMAGE DEALT</span></div>
+        <div><b id="go-lp">1250</b><span>LP REMAINING</span></div>
+      </div>
+      <div class="go-quote" id="go-quote">“The set was the play. You walked right into it.”</div>
+      <button class="btn primary xl" id="btn-rematch" type="button">DUEL AGAIN</button>
+    </div>
+  </div>
+
+</div>
+
+<script src="cards.js"></script>
+<script src="game.js"></script>
+</body>
+</html>
