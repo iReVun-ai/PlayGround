@@ -520,6 +520,93 @@
     try { localStorage.setItem("lpto0_record", JSON.stringify(state.record)); } catch (_) {}
   }
 
+  /* ============================================================
+     ONLINE ROOM LOBBY
+     ============================================================ */
+  function updateNameBindings() {
+    if (dom.oppName) dom.oppName.textContent = NAMES.opponent;
+    if (dom.oppAvatarLetter) dom.oppAvatarLetter.textContent = (NAMES.opponent[0] || "O").toUpperCase();
+    if (dom.oppRole) dom.oppRole.textContent = "ONLINE // SET-BREAKER";
+    if (dom.footerMatchup) {
+      dom.footerMatchup.innerHTML = `<b>${esc(NAMES.player)}</b> vs <b>${esc(NAMES.opponent)}</b>`;
+    }
+    const oppRole = $(".hud.opponent .hud-role");
+    if (oppRole) oppRole.textContent = "ONLINE // SET-BREAKER";
+  }
+
+  function createOwnRoom(announce = false) {
+    online.ownRoomCode = makeRoomCode();
+    online.roomCode = online.ownRoomCode;
+    online.rooms = makeRooms();
+    if (dom.lobbyOwnCode) dom.lobbyOwnCode.textContent = `#${online.ownRoomCode}`;
+    if (dom.lobbyCode) dom.lobbyCode.textContent = `ROOM #${online.roomCode}`;
+    if (announce) {
+      addLog(`<b>ROOM CREATED.</b> ${esc(NAMES.player)} is hosting room #${online.ownRoomCode}.`, "sys", true);
+      Sound.click();
+    }
+  }
+
+  function renderLobby() {
+    if (!dom.lobbyRoomList) return;
+    dom.lobbyRoomList.innerHTML = online.rooms.map((r) => {
+      const open = r.state === "OPEN";
+      return `
+        <div class="room-card${open ? "" : " full"}">
+          <div class="room-icon">${esc((r.host[0] || "?").toUpperCase())}</div>
+          <div class="room-main">
+            <div class="room-name"><b>${esc(r.host)}</b>'s ROOM <span class="room-code">#${r.code}</span></div>
+            <div class="room-meta">SET SUMMON // 4000 LP <span class="room-ping">${r.ping}ms</span></div>
+          </div>
+          <div class="room-side">
+            <span class="room-status ${open ? "open" : "full"}">${r.state}</span>
+            <button class="btn room-join" type="button" data-join="${esc(r.host)}" data-code="${r.code}"${open ? "" : " disabled"}>JOIN</button>
+          </div>
+        </div>`;
+    }).join("");
+    if (dom.lobbyOwnCode) dom.lobbyOwnCode.textContent = `#${online.ownRoomCode}`;
+    if (dom.lobbyCode) dom.lobbyCode.textContent = `ROOM #${online.roomCode || online.ownRoomCode}`;
+    if (dom.lobbyNet) dom.lobbyNet.textContent = `PING ${8 + Math.floor(Math.random() * 20)}ms`;
+    if (dom.lobbyResume) dom.lobbyResume.hidden = !online.started || !!state.winner;
+  }
+
+  function openLobby(opts = {}) {
+    if (!online.ownRoomCode) createOwnRoom();
+    if (opts.refresh !== false) online.rooms = makeRooms();
+    renderLobby();
+    updateNameBindings();
+    if (dom.lobbyOverlay) dom.lobbyOverlay.hidden = false;
+    if (!opts.silent) Sound.click();
+  }
+
+  function closeLobby() {
+    if (dom.lobbyOverlay) dom.lobbyOverlay.hidden = true;
+    Sound.click();
+  }
+
+  function startOnlineDuel(opponentName, roomCode) {
+    NAMES.opponent = opponentName || makeOnlineHandle();
+    online.opponent = NAMES.opponent;
+    online.roomCode = roomCode || online.ownRoomCode || makeRoomCode();
+    online.started = true;
+    updateNameBindings();
+    if (dom.lobbyOverlay) dom.lobbyOverlay.hidden = true;
+    dom.gameover.hidden = true;
+    dom.gameover.classList.remove("lose");
+    newGame();
+    addLog(`<b>ONLINE MATCH.</b> Room #${online.roomCode} // ${esc(NAMES.player)} vs ${esc(NAMES.opponent)}.`, "sys", true);
+    render();
+  }
+
+  function startOwnRoomDuel() {
+    startOnlineDuel(makeOnlineHandle(), online.ownRoomCode);
+  }
+
+  function quickMatch() {
+    const open = online.rooms.filter((r) => r.state === "OPEN");
+    const room = open.length ? pick(open) : { host: makeOnlineHandle(), code: makeRoomCode() };
+    startOnlineDuel(room.host, room.code);
+  }
+
   function newGame() {
     state.turn = 1;
     state.active = "player";
@@ -534,13 +621,14 @@
     state.stats = { damageDealt: 0, damageTaken: 0 };
     state.record = loadRecord();
     state.ui.lastLp = { player: 4000, opponent: 4000 };
+    updateNameBindings();
     dom.gameover.hidden = true;
     dom.gameover.classList.remove("lose");
     dom.rulesOverlay.hidden = true;
     dom.logRail.classList.remove("open");
     resetLog();
     clearSpeech();
-    addLog("<b>DUEL INITIALIZED.</b> 24 zones online. LP set to 4000.", "sys", true);
+    addLog(`<b>ROOM #${online.roomCode || online.ownRoomCode || "----"} CONNECTED.</b> 24 zones online. LP set to 4000.`, "sys", true);
     addLog(`${esc(NAMES.player)} vs ${esc(NAMES.opponent)} — set summon protocol engaged.`, "sys");
     for (let i = 0; i < 5; i++) {
       drawCard("player", { silent: true });
