@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070a14">
+<title>ZONE XII — 六大六小の決闘</title>
+<meta name="description" content="十二のゾーン、二十二のアクト。ライフポイントをゼロにせよ。六大六小のカードデュエル。">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%23070a14'/%3E%3Ccircle cx='32' cy='32' r='21' fill='none' stroke='%23e8c37a' stroke-width='2'/%3E%3Ctext x='32' y='41' font-family='serif' font-size='22' fill='%236fe7ff' text-anchor='middle'%3EXII%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+<div id="app">
+  <div class="backdrop" aria-hidden="true">
+    <div class="rune-ring"></div>
+    <div class="rune-ring ring-2"></div>
+    <div id="stars"></div>
+  </div>
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-mark">XII</span>
+      <span class="brand-text">
+        <span class="brand-title">ZONE XII</span>
+        <span class="brand-sub">六大六小の決闘</span>
+      </span>
+    </div>
+
+    <div class="turn-pill" id="turnPill">
+      <span class="turn-dot"></span>
+      <span id="turnLabel">STANDBY</span>
+      <span class="turn-sep">/</span>
+      <span id="turnCount">TURN 00</span>
+    </div>
+
+    <div class="top-actions">
+      <button type="button" class="icon-btn" id="helpBtn" aria-label="ルールを見る" title="ルール">?</button>
+      <button type="button" class="icon-btn" id="soundBtn" aria-label="サウンド切り替え" aria-pressed="true" title="サウンド">♪</button>
+      <button type="button" class="icon-btn" id="restartBtn" aria-label="最初からやり直す" title="リスタート">↻</button>
+    </div>
+  </header>
+
+  <main class="arena-wrap">
+    <section class="arena" aria-label="デュエルフィールド">
+      <div class="side enemy-side" id="enemySide">
+        <div class="player-strip enemy-strip" id="enemyStrip"></div>
+        <div class="board enemy-board" id="enemyBoard" aria-label="相手のフィールド"></div>
+      </div>
+
+      <div class="midline" aria-hidden="true">
+        <span class="midline-line"></span>
+        <span class="midline-gem"></span>
+        <span class="midline-line"></span>
+      </div>
+
+      <div class="side player-side" id="playerSide">
+        <div class="board player-board" id="playerBoard" aria-label="自分のフィールド"></div>
+        <div class="player-strip player-strip-self" id="playerStrip"></div>
+      </div>
+
+      <div class="ticker" id="ticker" aria-live="polite"></div>
+    </section>
+
+    <aside class="log-panel" id="logPanel" aria-label="デュエルログ">
+      <div class="log-head">
+        <span>DUEL RECORD</span>
+        <span class="log-live"><i></i>LIVE</span>
+      </div>
+      <ol class="log-list" id="logList" aria-live="polite"></ol>
+      <div class="log-legend">
+        <span><i class="dot-you"></i>YOU</span>
+        <span><i class="dot-foe"></i>NOX</span>
+      </div>
+    </aside>
+  </main>
+
+  <footer class="hand-area">
+    <div class="action-bar" id="actionBar"></div>
+    <div class="hand-row">
+      <div class="hand-scroll" id="handScroll">
+        <div class="hand" id="hand" aria-label="手札"></div>
+      </div>
+      <button type="button" class="end-turn-btn" id="endTurnBtn">
+        <span class="end-turn-main">ターン終了</span>
+        <span class="end-turn-sub">END TURN</span>
+      </button>
+    </div>
+  </footer>
+
+  <div class="toast-stack" id="toastStack" aria-live="assertive"></div>
+  <div class="turn-banner" id="turnBanner" aria-hidden="true"></div>
+  <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
+
+  <div class="overlay intro-overlay" id="introOverlay">
+    <div class="intro-inner">
+      <div class="intro-sigil" aria-hidden="true">
+        <span class="sigil-ring"></span>
+        <span class="sigil-ring sigil-ring-2"></span>
+        <span class="sigil-core">XII</span>
+      </div>
+      <p class="intro-kicker">SIX LARGE / SIX SMALL / TWELVE ZONES</p>
+      <h1 class="intro-title">ZONE <span>XII</span></h1>
+      <p class="intro-sub">六大六小の決闘</p>
+      <p class="intro-lead">十二のゾーンに、二十二のアクト。<br>相手のライフポイントをゼロにせよ。</p>
+      <div class="intro-chips">
+        <span><b>3000</b> LP</span>
+        <span><b>6</b> BIG</span>
+        <span><b>6</b> SMALL</span>
+        <span><b>ACT</b> 全カード</span>
+      </div>
+      <div class="intro-actions">
+        <button type="button" class="start-btn" id="startBtn" aria-label="Start">
+          <span>デュエル開始</span>
+          <small>ENTER THE DUEL</small>
+        </button>
+        <button type="button" class="text-btn" id="introRulesBtn">ルールを見る</button>
+      </div>
+      <p class="intro-foot">全カードのアクトが機能する、公式ルール非公認の十二界決闘。</p>
+    </div>
+  </div>
+
+  <div class="overlay modal-overlay hidden" id="rulesOverlay">
+    <div class="modal rules-modal" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+      <div class="modal-head">
+        <span class="modal-kicker">HOW TO DUEL</span>
+        <h2 id="rulesTitle">十二界のルール</h2>
+        <button type="button" class="modal-close" id="rulesClose" aria-label="閉じる">×</button>
+      </div>
+      <div class="rules-body">
+        <section>
+          <h3>勝利条件</h3>
+          <p>相手のライフポイントを<strong>0</strong>にすれば勝利。デッキ切れ負けはなく、山札が尽きたら墓地をシャッフルして再利用する。</p>
+        </section>
+        <section>
+          <h3>フィールド</h3>
+          <p>各プレイヤーは<strong>BIGゾーン6つ</strong>（モンスター）と<strong>SMALLゾーン6つ</strong>（リリック）を持つ。合計十二。</p>
+        </section>
+        <section>
+          <h3>ターンの流れ</h3>
+          <p>自分のターン開始時に1枚ドローし、自分のカードがすべて行動可能になる。1ターンに<strong>召喚1体</strong>と<strong>設置1枚</strong>、そして各カードの<strong>ACT</strong>を1回ずつ使える。</p>
+        </section>
+        <section>
+          <h3>ACT</h3>
+          <p>モンスターもリリックも、すべてのカードが固有の<strong>ACT</strong>を持つ。ACTを使うとそのカードはアクト済みになり、次の自分のターンまでACTを使えない。モンスターはACTとは別に1回攻撃できる。召喚したターンのモンスターは攻撃できないが、ACTは使える。</p>
+        </section>
+        <section>
+          <h3>戦闘</h3>
+          <p>相手モンスターがいれば、そのうち1体を攻撃対象にする（直接攻撃は不可）。お互いのATKを比べ、高い方が生き残り、低い方が破壊される。差がそのまま敗者のライフポイントへのダメージ。同じATKなら両方破壊。相手モンスターがいなければ、ATKぶんの直接ダメージ。</p>
+        </section>
+        <section>
+          <h3>リリック</h3>
+          <p>SMALLゾーンのカードは攻撃も被攻撃もせず、ACTで支援・妨害・蘇生を行う。破壊されたモンスターは墓地へ送られ、蘇生の対象になる。</p>
+        </section>
+        <section class="rules-tip">
+          <h3>操作</h3>
+          <p>カードをタップして選択。下部のボタンで召喚・設置・ACT・攻撃。攻撃時は赤く光る相手カードをタップ。空きゾーンをタップして直接置くこともできる。<kbd>Esc</kbd>でキャンセル。</p>
+        </section>
+      </div>
+      <div class="modal-foot">
+        <span>ZONE XII — OFFICIAL-ISH CARD GAME</span>
+        <button type="button" class="btn primary" id="rulesOk">了解</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="overlay gameover-overlay hidden" id="gameoverOverlay">
+    <div class="gameover-card" id="gameoverCard">
+      <p class="gameover-kicker" id="gameoverKicker">DUEL COMPLETE</p>
+      <h2 class="gameover-title" id="gameoverTitle">VICTORY</h2>
+      <p class="gameover-sub" id="gameoverSub">勝利</p>
+      <div class="gameover-stats" id="gameoverStats"></div>
+      <div class="gameover-actions">
+        <button type="button" class="btn primary" id="rematchBtn">再戦する</button>
+        <button type="button" class="btn ghost" id="gameoverRulesBtn">ルール</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<noscript><div class="noscript">このゲームを遊ぶには JavaScript を有効にしてください。</div></noscript>
+<script type="module" src="./src/game.js"></script>
+</body>
+</html>
