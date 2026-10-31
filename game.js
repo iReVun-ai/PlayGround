@@ -1693,6 +1693,65 @@
     ).finished.catch(() => {}).finally(() => el.remove());
   }
 
+  /* The attack card flies out along an arc, strikes the target, then returns.
+     Deliberately mirrors the summon fly-in so both actions read as card movement. */
+  async function animateAttack(attacker, atkEl, targetEl, sideKey) {
+    if (!atkEl || !targetEl) return;
+    const impact = () => {
+      FX.burstAt(targetEl, sideKey === "player" ? "#55f4ff" : "#ff3ea5", 30, 6);
+      slashBetween(atkEl, targetEl, sideKey === "opponent");
+      Sound.hit();
+      shakeApp();
+    };
+    if (reduceMotion) {
+      await wait(180);
+      impact();
+      return;
+    }
+
+    const a = atkEl.getBoundingClientRect();
+    const b = targetEl.getBoundingClientRect();
+    if (!a.width || !b.width) return;
+    const dx = b.left + b.width / 2 - (a.left + a.width / 2);
+    const dy = b.top + b.height / 2 - (a.top + a.height / 2);
+    const scale = clamp(Math.min(b.width / a.width, 1.3), 0.96, 1.28);
+    const dir = sideKey === "player" ? 1 : -1;
+    const clone = createCardEl(attacker, "zone");
+    clone.classList.add("fly-card", "attack-fly");
+    clone.style.left = `${a.left}px`;
+    clone.style.top = `${a.top}px`;
+    clone.style.width = `${a.width}px`;
+    clone.style.height = `${a.height}px`;
+    clone.style.margin = "0";
+    document.body.appendChild(clone);
+    const original = atkEl.querySelector(".card");
+    if (original) original.style.opacity = "0";
+
+    try {
+      await clone.animate(
+        [
+          { transform: "translate(0, 0) scale(1) rotate(0deg)", offset: 0 },
+          { transform: `translate(${dx * 0.52}px, ${dy * 0.52 - 30}px) scale(1.13) rotate(${dir * -4}deg)`, offset: 0.58 },
+          { transform: `translate(${dx}px, ${dy}px) scale(${scale}) rotate(0deg)`, offset: 1 }
+        ],
+        { duration: 360, easing: "cubic-bezier(0.22, 0.85, 0.3, 1)", fill: "forwards" }
+      ).finished.catch(() => {});
+      impact();
+      await wait(75);
+      await clone.animate(
+        [
+          { transform: `translate(${dx}px, ${dy}px) scale(${scale}) rotate(0deg)`, offset: 0 },
+          { transform: `translate(${dx * 0.46}px, ${dy * 0.46 - 26}px) scale(1.1) rotate(${dir * 3}deg)`, offset: 0.48 },
+          { transform: "translate(0, 0) scale(1) rotate(0deg)", offset: 1 }
+        ],
+        { duration: 320, easing: "cubic-bezier(0.3, 0.75, 0.3, 1)", fill: "forwards" }
+      ).finished.catch(() => {});
+    } finally {
+      clone.remove();
+      if (original) original.style.opacity = "";
+    }
+  }
+
   function shakeApp() {
     if (reduceMotion) return;
     dom.app.classList.remove("shake");
@@ -1830,25 +1889,7 @@
     Sound.attack();
     render();
 
-    if (!reduceMotion && atkEl && targetEl) {
-      const a = atkEl.getBoundingClientRect();
-      const b = targetEl.getBoundingClientRect();
-      const dx = (b.left + b.width / 2 - (a.left + a.width / 2)) * 0.28;
-      const dy = (b.top + b.height / 2 - (a.top + a.height / 2)) * 0.28;
-      const cardEl = atkEl.querySelector(".card");
-      if (cardEl) {
-        cardEl.animate(
-          [
-            { transform: "translate(0,0) scale(1)" },
-            { transform: `translate(${dx}px, ${dy}px) scale(1.12)`, offset: 0.45 },
-            { transform: "translate(0,0) scale(1)" }
-          ],
-          { duration: 380, easing: "cubic-bezier(0.3, 0.9, 0.3, 1)" }
-        );
-      }
-      slashBetween(atkEl, targetEl, attackerSide === "opponent");
-    }
-    await wait(360);
+    await animateAttack(attacker, atkEl, targetEl, attackerSide);
 
     let negated = false;
     if (!direct || target) {
@@ -1858,11 +1899,6 @@
     }
     if (state.winner) { render(); return; }
     if (negated || !isOnField(attacker)) { render(); await wait(320); return; }
-    if (isOnField(attacker)) {
-      FX.burstAt(targetEl, attackerSide === "player" ? "#55f4ff" : "#ff3ea5", 22, 5);
-      Sound.hit();
-      shakeApp();
-    }
 
     let damageSide = null;
     let damageAmount = 0;

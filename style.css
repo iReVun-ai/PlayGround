@@ -1769,6 +1769,12 @@ button:focus-visible,
   filter: drop-shadow(0 12px 22px rgba(0, 0, 0, 0.6));
   transition: none;
 }
+.fly-card.attack-fly {
+  z-index: 82;
+  filter:
+    drop-shadow(0 0 14px color-mix(in srgb, var(--glow, #55f4ff) 70%, transparent))
+    drop-shadow(0 18px 30px rgba(0, 0, 0, 0.7));
+}
 .slash {
   position: fixed;
   z-index: 65;
