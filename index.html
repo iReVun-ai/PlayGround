@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>神殿決闘 — Temple Duel</title>
+<meta name="description" content="A shrine card duel. Command four spirits and four sacred relics, break the enemy line, and reduce their life points to zero." />
+<meta name="theme-color" content="#07060d" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Shippori+Mincho+B1:wght@400;600;800&display=swap" rel="stylesheet" />
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2307060d'/%3E%3Cpath d='M12 20h40l-3 6H15zM18 30h28v4H18zM20 34h5v20h-5zM39 34h5v20h-5z' fill='%23f8e3a4'/%3E%3C/svg%3E" />
+<link rel="stylesheet" href="./styles.css" />
+</head>
+<body>
+
+<div class="scene" aria-hidden="true">
+  <div class="sky"></div>
+  <div class="moon"><i class="crater c1"></i><i class="crater c2"></i><i class="crater c3"></i></div>
+  <div class="stars" id="stars"></div>
+
+  <svg class="mountains" viewBox="0 0 1440 520" preserveAspectRatio="none">
+    <defs>
+      <linearGradient id="mtn-far" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#171a33" /><stop offset="1" stop-color="#0a0916" />
+      </linearGradient>
+      <linearGradient id="mtn-near" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#0d0d1c" /><stop offset="1" stop-color="#05040a" />
+      </linearGradient>
+      <linearGradient id="mist" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#9db7d8" stop-opacity="0" />
+        <stop offset=".7" stop-color="#9db7d8" stop-opacity=".08" />
+        <stop offset="1" stop-color="#9db7d8" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+    <path d="M0 340 L120 250 L210 300 L330 190 L420 270 L540 160 L660 280 L760 210 L880 300 L1000 180 L1120 270 L1240 200 L1360 290 L1440 240 L1440 520 L0 520Z" fill="url(#mtn-far)" opacity=".9" />
+    <path d="M0 410 L150 330 L260 380 L390 290 L520 370 L640 300 L780 390 L900 310 L1040 380 L1180 300 L1320 380 L1440 340 L1440 520 L0 520Z" fill="url(#mtn-near)" />
+    <rect y="360" width="1440" height="160" fill="url(#mist)" />
+  </svg>
+
+  <svg class="torii" viewBox="0 0 900 700" preserveAspectRatio="xMidYMax meet">
+    <defs>
+      <linearGradient id="torii-red" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#8d2b25" /><stop offset="1" stop-color="#3a0f12" />
+      </linearGradient>
+      <linearGradient id="torii-glow" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0" stop-color="#f6c978" stop-opacity=".55" /><stop offset="1" stop-color="#f6c978" stop-opacity="0" />
+      </linearGradient>
+    </defs>
+    <g class="torii-glowline" fill="url(#torii-glow)" opacity=".5">
+      <path d="M120 118 H780 L742 170 H158 Z" />
+      <rect x="210" y="200" width="58" height="500" />
+      <rect x="632" y="200" width="58" height="500" />
+    </g>
+    <g fill="url(#torii-red)" stroke="#c99b4a" stroke-opacity=".35" stroke-width="1.5">
+      <path d="M96 128 C260 88 640 88 804 128 L788 170 C640 138 260 138 112 170 Z" />
+      <path d="M150 196 H750 L734 234 H166 Z" />
+      <rect x="202" y="228" width="54" height="472" rx="4" />
+      <rect x="644" y="228" width="54" height="472" rx="4" />
+      <path d="M180 690 h98 v22 h-98 Z M622 690 h98 v22 h-98 Z" />
+      <path d="M432 234 h36 v120 h-36 Z" />
+    </g>
+    <g stroke="#e7bd6f" stroke-opacity=".22" fill="none">
+      <path d="M210 300 h38 M210 380 h38 M210 460 h38 M210 540 h38 M210 620 h38" />
+      <path d="M652 300 h38 M652 380 h38 M652 460 h38 M652 540 h38 M652 620 h38" />
+    </g>
+  </svg>
+
+  <div class="enso"></div>
+  <div class="fog fog-a"></div>
+  <div class="fog fog-b"></div>
+  <div class="lanterns" id="lanterns"></div>
+</div>
+
+<canvas id="fx" aria-hidden="true"></canvas>
+
+<main class="game" id="game">
+
+  <header class="topbar">
+    <div class="brand">
+      <span class="brand-seal">神</span>
+      <div class="brand-text">
+        <h1>TEMPLE DUEL</h1>
+        <p>神殿決闘 · SHRINE OF LIFE POINTS</p>
+      </div>
+    </div>
+    <div class="turn-pill" id="turn-pill">
+      <span class="dot"></span><span id="turn-label">YOUR TURN</span>
+    </div>
+    <div class="top-actions">
+      <button class="icon-btn" id="sound-btn" aria-label="Toggle sound" title="Sound">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path class="sound-wave" d="M16 8.5c1.2 1 1.2 6 0 7M18.5 6c2.4 2 2.4 10 0 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path class="sound-x" d="M16 9l5 6M21 9l-5 6" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </button>
+      <button class="icon-btn" id="rules-btn" aria-label="How to play" title="How to play">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18Zm0 13.4a1.2 1.2 0 1 1 0 2.4 1.2 1.2 0 0 1 0-2.4Zm.2-9.4c2.2 0 3.6 1.2 3.6 2.9 0 1.4-.8 2.1-1.9 2.9-.9.6-1.2 1-1.2 1.9h-1.7c0-1.6.5-2.3 1.6-3.1.8-.6 1.2-1 1.2-1.7 0-.8-.6-1.3-1.6-1.3s-1.7.6-1.8 1.7H9.7c.1-2 1.5-3.3 3.5-3.3Z" fill="currentColor"/></svg>
+      </button>
+      <button class="icon-btn mobile-only" id="restart-icon" aria-label="New duel" title="New duel">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5a7 7 0 1 1-6.3 4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><path d="M5 3v6h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </button>
+      <button class="btn small ghost" id="restart-btn">NEW DUEL</button>
+    </div>
+  </header>
+
+  <section class="duelist enemy" id="enemy-panel">
+    <div class="portrait enemy-portrait"><span>影</span><i></i></div>
+    <div class="duelist-main">
+      <div class="duelist-name"><span class="jp">影の神主</span><span class="en">SHADOW PRIEST</span></div>
+      <div class="lp-line">
+        <span class="lp-tag">LP</span>
+        <span class="lp-number" id="enemy-lp">4000</span>
+        <div class="lp-track"><div class="lp-fill" id="enemy-lp-fill"></div></div>
+        <span class="shield-chip" id="enemy-shield" hidden>◈ 0</span>
+      </div>
+    </div>
+    <div class="duelist-side"><span class="side-tag" id="enemy-side-tag">STANDBY</span></div>
+  </section>
+
+  <div class="log-strip" aria-live="polite">
+    <span class="log-mark">社</span>
+    <span class="log-text" id="log-text">The shrine breathes. Sixteen cards await the first command.</span>
+  </div>
+
+  <section class="board" id="board" aria-label="Duel board: eight spirit cards and eight relic cards">
+    <div class="board-corners" aria-hidden="true"><i></i><i></i><i></i><i></i></div>
+    <div class="board-halo" aria-hidden="true"></div>
+    <div class="row row-tiny" data-side="enemy" data-kind="tiny"></div>
+    <div class="row row-big" data-side="enemy" data-kind="big"></div>
+    <div class="divider">
+      <span class="divider-line"></span>
+      <span class="divider-text" id="divider-text">TURN 01 · YOUR MOVE</span>
+      <span class="divider-line"></span>
+    </div>
+    <div class="row row-big" data-side="player" data-kind="big"></div>
+    <div class="row row-tiny" data-side="player" data-kind="tiny"></div>
+  </section>
+
+  <section class="duelist player" id="player-panel">
+    <div class="portrait player-portrait"><span>巫</span><i></i></div>
+    <div class="duelist-main">
+      <div class="duelist-name"><span class="jp">あなた</span><span class="en">THE DUELIST</span></div>
+      <div class="lp-line">
+        <span class="lp-tag">LP</span>
+        <span class="lp-number" id="player-lp">4000</span>
+        <div class="lp-track"><div class="lp-fill" id="player-lp-fill"></div></div>
+        <span class="shield-chip" id="player-shield" hidden>◈ 0</span>
+      </div>
+    </div>
+    <div class="duelist-side"><span class="side-tag" id="player-side-tag">YOUR TURN</span></div>
+  </section>
+
+  <div class="command-bar" id="command-bar">
+    <div class="cmd-info">
+      <span class="cmd-kicker">COMMAND</span>
+      <span class="cmd-text" id="cmd-text">Select a spirit to issue a command.</span>
+    </div>
+    <div class="cmd-actions" id="cmd-actions"></div>
+  </div>
+
+</main>
+
+<div class="tooltip" id="tooltip" role="tooltip"></div>
+<div class="banner-layer" id="banner-layer"></div>
+
+<div class="overlay" id="overlay" hidden>
+  <div class="overlay-rays"></div>
+  <div class="overlay-inner">
+    <div class="overlay-kicker" id="overlay-kicker">THE SHRINE HAS SPOKEN</div>
+    <div class="overlay-kanji" id="overlay-kanji">勝利</div>
+    <h2 class="overlay-title" id="overlay-title">VICTORY</h2>
+    <p class="overlay-sub" id="overlay-sub">The shadow priest falls. The altar is yours.</p>
+    <div class="overlay-stats" id="overlay-stats"></div>
+    <button class="btn primary" id="again-btn">DUEL AGAIN</button>
+  </div>
+</div>
+
+<div class="modal" id="rules-modal" hidden>
+  <div class="modal-card">
+    <button class="modal-close" id="rules-close" aria-label="Close rules">×</button>
+    <span class="modal-kicker">HOW TO PLAY</span>
+    <h2>決闘の作法</h2>
+    <ul>
+      <li><b>Four spirits. Four relics.</b> Every card on the altar belongs to someone.</li>
+      <li>On your turn, each living spirit may attack <b>once</b>. Tap a spirit, then <b>ATTACK</b>, then choose a target.</li>
+      <li><b>ATK vs DEF.</b> If your ATK is higher, the defender is destroyed and the difference hits their life points.</li>
+      <li>If your ATK is lower, <b>your attacker</b> is destroyed and you take the difference.</li>
+      <li>Equal values destroy both cards.</li>
+      <li>If the enemy has no spirits, attack their <b>life points directly</b>.</li>
+      <li>Relics are single-use: heal, empower, shield, or burn. Activate them any time on your turn.</li>
+      <li>Reduce the enemy to <b>0 LP</b> to win. Let your own reach zero and the shrine claims you.</li>
+    </ul>
+    <button class="btn primary" id="rules-ok">UNDERSTOOD</button>
+  </div>
+</div>
+
+<script src="./game.js"></script>
+</body>
+</html>
