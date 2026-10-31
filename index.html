@@ -1,0 +1,308 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, minimum-scale=1, maximum-scale=1, user-scalable=no">
+  <meta name="theme-color" content="#05070f">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="description" content="LP TO 0 — セット・サモン・24ゾーンで戦うカードデュエルゲーム。">
+  <title>LP TO 0 — 24 ZONE CARD DUEL</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23050a14'/%3E%3Ctext x='32' y='45' font-family='Arial Black,Arial' font-size='38' font-weight='900' text-anchor='middle' fill='%2345e8ff'%3E0%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <canvas id="cosmos" aria-hidden="true"></canvas>
+  <div class="ambient ambient-a" aria-hidden="true"></div>
+  <div class="ambient ambient-b" aria-hidden="true"></div>
+  <div class="scanlines" aria-hidden="true"></div>
+
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand" aria-label="LP TO 0">
+        <span class="brand-lp">LP</span><span class="brand-small">TO</span><span class="brand-zero">0</span>
+      </div>
+      <div class="match-meta">
+        <span class="live-dot" id="liveDot"></span>
+        <span id="phaseLabel">STANDBY</span>
+        <span class="meta-sep">/</span>
+        <span>24 ZONE DUEL</span>
+        <span class="meta-sep">/</span>
+        <span id="turnLabel">TURN 00</span>
+      </div>
+      <div class="hud-buttons">
+        <button class="icon-btn" id="logBtn" type="button" aria-label="デュエルログを開く" title="DUEL LOG">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 4h11l3 3v13H5zM8 9h8M8 13h8M8 17h5"/></svg>
+        </button>
+        <button class="icon-btn" id="helpBtn" type="button" aria-label="遊び方" title="HOW TO PLAY">
+          <span class="qmark">?</span>
+        </button>
+        <button class="icon-btn" id="soundBtn" type="button" aria-label="サウンドをオフにする" title="SOUND">
+          <svg class="sound-on" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM16 8c1.6 1.1 2.5 2.4 2.5 4S17.6 14.9 16 16M18.5 5.5C21 7.3 22 9.5 22 12s-1 4.7-3.5 6.5"/></svg>
+          <svg class="sound-off" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4zM17 9l5 5M22 9l-5 5"/></svg>
+        </button>
+        <button class="icon-btn" id="restartBtn" type="button" aria-label="デュエルをやり直す" title="RESTART">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 1 0-2.3 6.7M20 5v6h-6"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="duel-layout" id="duelLayout">
+      <aside class="duelist-panel rival-panel" id="rivalPanel">
+        <div class="panel-scan" aria-hidden="true"></div>
+        <div class="duelist-head">
+          <div class="crest rival-crest" aria-hidden="true"><span>H</span><i></i></div>
+          <div class="duelist-id">
+            <span class="duelist-tag">RIVAL / 分岐</span>
+            <strong class="duelist-name" id="rivalName">H大好き分岐ｵﾚ</strong>
+            <span class="duelist-status" id="rivalStatus">AWAITING DUEL</span>
+          </div>
+          <div class="turn-pip" id="rivalTurnPip">02</div>
+        </div>
+        <div class="lp-block">
+          <div class="lp-line"><span class="lp-label">LIFE POINT</span><span class="lp-value" id="rivalLP">4000</span></div>
+          <div class="lp-track"><div class="lp-fill rival-fill" id="rivalLPBar"></div><div class="lp-ticks"></div></div>
+        </div>
+        <div class="duelist-stats">
+          <div><span>DECK</span><b id="rivalDeck">24</b></div>
+          <div><span>HAND</span><b id="rivalHand">05</b></div>
+          <div><span>GY</span><b id="rivalGY">00</b></div>
+        </div>
+        <div class="rival-hand" id="rivalHandVisual" aria-hidden="true"></div>
+      </aside>
+
+      <section class="board-shell" id="boardShell" aria-label="デュエルフィールド">
+        <div class="board-crown">
+          <span class="crown-line"></span>
+          <span class="crown-label">24 CARD ZONES</span>
+          <span class="crown-line"></span>
+        </div>
+        <div class="board" id="board">
+          <div class="board-grid" aria-hidden="true"></div>
+          <div class="board-orbit orbit-one" aria-hidden="true"></div>
+          <div class="board-orbit orbit-two" aria-hidden="true"></div>
+          <div class="side-tag opp-tag">RIVAL FIELD</div>
+          <div class="side-tag player-tag">YOUR FIELD</div>
+
+          <div class="field-half opponent-half" id="opponentField">
+            <div class="zone-row backrow" id="rivalSpellRow" data-side="rival" data-row="spell" aria-label="相手の魔法・罠ゾーン"></div>
+            <div class="zone-row monsterrow" id="rivalMonsterRow" data-side="rival" data-row="monster" aria-label="相手のモンスターゾーン"></div>
+          </div>
+
+          <div class="center-divider" aria-hidden="true">
+            <span class="divider-wing left"></span>
+            <span class="divider-core">DUEL</span>
+            <span class="divider-wing right"></span>
+          </div>
+
+          <div class="field-half player-half" id="playerField">
+            <div class="zone-row monsterrow" id="playerMonsterRow" data-side="player" data-row="monster" aria-label="自分のモンスターゾーン"></div>
+            <div class="zone-row backrow" id="playerSpellRow" data-side="player" data-row="spell" aria-label="自分の魔法・罠ゾーン"></div>
+          </div>
+
+          <div class="board-vignette" aria-hidden="true"></div>
+        </div>
+
+        <div class="event-feed" id="eventFeed" aria-live="polite"></div>
+        <div class="turn-banner" id="turnBanner" aria-live="assertive">
+          <span class="banner-kicker">TURN 01</span>
+          <strong class="banner-text">YOUR TURN</strong>
+          <span class="banner-sub">LPを0にせよ</span>
+        </div>
+        <div class="target-hint" id="targetHint"></div>
+      </section>
+
+      <aside class="duelist-panel player-panel" id="playerPanel">
+        <div class="panel-scan" aria-hidden="true"></div>
+        <div class="duelist-head">
+          <div class="crest player-crest" aria-hidden="true"><span>11</span><i></i></div>
+          <div class="duelist-id">
+            <span class="duelist-tag">CHALLENGER / 挑戦者</span>
+            <strong class="duelist-name" id="playerName">11ai'ame</strong>
+            <span class="duelist-status" id="playerStatus">READY</span>
+          </div>
+          <div class="turn-pip" id="playerTurnPip">01</div>
+        </div>
+        <div class="lp-block">
+          <div class="lp-line"><span class="lp-label">LIFE POINT</span><span class="lp-value" id="playerLP">4000</span></div>
+          <div class="lp-track"><div class="lp-fill player-fill" id="playerLPBar"></div><div class="lp-ticks"></div></div>
+        </div>
+        <div class="duelist-stats">
+          <div><span>DECK</span><b id="playerDeck">24</b></div>
+          <div><span>HAND</span><b id="playerHandCount">05</b></div>
+          <div><span>GY</span><b id="playerGY">00</b></div>
+        </div>
+        <div class="zone-readout">
+          <span><i class="dot cyan"></i> MONSTER <b id="playerMonsterCount">0</b>/6</span>
+          <span><i class="dot gold"></i> SPELL <b id="playerSpellCount">0</b>/6</span>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="bottom-ui">
+      <section class="hand-dock" aria-label="手札">
+        <div class="hand-meta">
+          <span class="hand-title">HAND</span>
+          <span class="hand-count" id="handCount">05</span>
+          <span class="hand-limit">/ 08</span>
+        </div>
+        <div class="hand" id="hand"></div>
+        <div class="deck-stack" id="playerDeckVisual" aria-label="デッキ">
+          <div class="deck-card d1"></div>
+          <div class="deck-card d2"></div>
+          <div class="deck-card d3"></div>
+          <span class="deck-count" id="deckCount">24</span>
+          <span class="deck-label">DECK</span>
+        </div>
+      </section>
+
+      <section class="command-dock" aria-label="操作">
+        <div class="context-card" id="contextCard">
+          <span class="context-kicker" id="contextKicker">COMMAND</span>
+          <strong class="context-title" id="contextTitle">カードを選択</strong>
+          <span class="context-text" id="contextText">手札をタップして、サモン・セット・発動。</span>
+        </div>
+        <div class="action-buttons" id="actionButtons"></div>
+        <button class="end-turn" id="endTurnBtn" type="button">
+          <span>END TURN</span>
+          <small>ターン終了</small>
+        </button>
+      </section>
+    </footer>
+  </div>
+
+  <section class="landing" id="landing" aria-label="タイトル画面">
+    <div class="landing-grid">
+      <article class="intro-card intro-player">
+        <div class="intro-index">01 / CHALLENGER</div>
+        <div class="intro-crest player-crest"><span>11</span><i></i></div>
+        <h2>11ai'ame</h2>
+        <p>星を読み、盤面を分岐させる挑戦者。</p>
+        <div class="intro-stat"><span>LP</span><b>4000</b><span>DECK</span><b>24</b></div>
+      </article>
+
+      <div class="hero">
+        <div class="hero-kicker"><span></span>SET / SUMMON / SURVIVE<span></span></div>
+        <h1 class="hero-title" aria-label="LP TO 0">
+          <span class="title-lp">LP</span>
+          <span class="title-to">TO</span>
+          <span class="title-zero">0</span>
+        </h1>
+        <p class="hero-jp">LPが0になるまで、終われない。</p>
+        <p class="hero-en">A 24-ZONE CARD DUEL</p>
+        <p class="hero-versus"><span>11ai'ame</span><i>VS</i><span>H大好き分岐ｵﾚ</span></p>
+        <div class="hero-zone">
+          <div class="zone-ring"><span>24</span><small>ZONES</small></div>
+          <div class="zone-copy">
+            <strong>6 × MONSTER</strong>
+            <strong>6 × SPELL / TRAP</strong>
+            <span>× 2 DUELISTS</span>
+          </div>
+        </div>
+        <div class="hero-actions">
+          <button class="start-btn" id="startBtn" type="button" aria-label="Start Game">
+            <span class="start-main">START GAME</span>
+            <span class="start-sub">デュエル開始</span>
+            <i class="btn-sheen" aria-hidden="true"></i>
+          </button>
+          <button class="ghost-btn" id="howBtn" type="button">HOW TO PLAY <small>遊び方</small></button>
+        </div>
+        <p class="hero-foot">LP 4000 / 1 VS 1 / ONE WIN</p>
+      </div>
+
+      <article class="intro-card intro-rival">
+        <div class="intro-index">02 / RIVAL</div>
+        <div class="intro-crest rival-crest"><span>H</span><i></i></div>
+        <h2>H大好き分岐ｵﾚ</h2>
+        <p>分岐を愛し、盤面を焼き払うライバル。</p>
+        <div class="intro-stat"><span>LP</span><b>4000</b><span>DECK</span><b>24</b></div>
+      </article>
+    </div>
+    <div class="landing-footer">
+      <span>LP TO 0</span>
+      <span>SET / SUMMON / 24 ZONES</span>
+      <span>© 2026 DUEL SYSTEM</span>
+    </div>
+  </section>
+
+  <div class="modal-layer" id="helpModal" hidden>
+    <div class="modal-bg" data-close-modal="helpModal"></div>
+    <section class="modal help-modal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+      <button class="modal-close" type="button" data-close-modal="helpModal" aria-label="閉じる">×</button>
+      <div class="modal-kicker">DUEL MANUAL / 01</div>
+      <h2 id="helpTitle">LPを0にした者が勝つ。</h2>
+      <p class="modal-lead">手札からカードを選び、24のゾーンへセット＆サモン。相手のLPを削り切れ。</p>
+      <div class="help-grid">
+        <article>
+          <span class="help-num">01</span>
+          <h3>召喚 / SUMMON</h3>
+          <p>モンスターを表側攻撃表示で出す。Lv5・6は生贄1体、Lv7以上は生贄2体が必要。1ターンに1体まで。</p>
+        </article>
+        <article>
+          <span class="help-num">02</span>
+          <h3>セット / SET</h3>
+          <p>モンスターは裏側守備表示、魔法・罠は伏せて配置。罠は条件を満たすと自動発動する。</p>
+        </article>
+        <article>
+          <span class="help-num">03</span>
+          <h3>攻撃 / ATTACK</h3>
+          <p>攻撃表示のモンスターで相手を攻撃。相手モンスターがいなければ直接攻撃。戦闘ダメージでLPが減る。</p>
+        </article>
+        <article>
+          <span class="help-num">04</span>
+          <h3>勝利 / VICTORY</h3>
+          <p>相手のLPを0にするか、相手のデッキを0枚にしてドローさせれば勝利。デッキ切れは敗北。</p>
+        </article>
+      </div>
+      <div class="help-tips">
+        <span><i class="dot cyan"></i> 6 MONSTER ZONES</span>
+        <span><i class="dot gold"></i> 6 SPELL / TRAP ZONES</span>
+        <span><i class="dot red"></i> LP 4000</span>
+      </div>
+      <button class="modal-cta" type="button" data-close-modal="helpModal">UNDERSTOOD</button>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="logModal" hidden>
+    <div class="modal-bg" data-close-modal="logModal"></div>
+    <section class="modal log-modal" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+      <button class="modal-close" type="button" data-close-modal="logModal" aria-label="閉じる">×</button>
+      <div class="modal-kicker">DUEL RECORD</div>
+      <h2 id="logTitle">デュエルログ</h2>
+      <div class="log-list" id="logList"></div>
+    </section>
+  </div>
+
+  <div class="modal-layer" id="graveModal" hidden>
+    <div class="modal-bg" data-close-modal="graveModal"></div>
+    <section class="modal grave-modal" role="dialog" aria-modal="true" aria-labelledby="graveTitle">
+      <button class="modal-close" type="button" data-close-modal="graveModal" aria-label="閉じる">×</button>
+      <div class="modal-kicker">GRAVEYARD</div>
+      <h2 id="graveTitle">墓地</h2>
+      <div class="grave-grid" id="graveGrid"></div>
+    </section>
+  </div>
+
+  <div class="modal-layer end-layer" id="endModal" hidden>
+    <div class="end-rays" aria-hidden="true"></div>
+    <section class="end-card" role="dialog" aria-modal="true" aria-labelledby="endTitle">
+      <span class="end-kicker" id="endKicker">DUEL COMPLETE</span>
+      <h2 id="endTitle">VICTORY</h2>
+      <p id="endText">相手のLPを0にした。</p>
+      <div class="end-stats">
+        <div><span>TURNS</span><b id="endTurns">00</b></div>
+        <div><span>DAMAGE</span><b id="endDamage">0000</b></div>
+        <div><span>DESTROYED</span><b id="endDestroyed">00</b></div>
+      </div>
+      <div class="end-actions">
+        <button class="start-btn small" id="rematchBtn" type="button"><span class="start-main">REMATCH</span><span class="start-sub">再戦</span></button>
+        <button class="ghost-btn" id="backTitleBtn" type="button">TITLE <small>タイトルへ</small></button>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast-stack" id="toastStack" aria-live="polite"></div>
+
+  <script src="game.js"></script>
+</body>
+</html>
