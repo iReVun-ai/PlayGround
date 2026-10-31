@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#070910" />
+  <meta name="description" content="ZERO POINT — 24ゾーンの遊戯王風デュエルパズル。最短手数で相手のLPを0にせよ。" />
+  <title>ZERO POINT — 24-ZONE DUEL PUZZLE</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230b0e17'/%3E%3Ccircle cx='32' cy='32' r='18' fill='none' stroke='%23f5d24a' stroke-width='4'/%3E%3Cpath d='M32 14v36M14 32h36' stroke='%23f5d24a' stroke-width='2' opacity='.5'/%3E%3C/svg%3E" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="app" id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand__mark" aria-hidden="true"><span>0</span></div>
+        <div class="brand__text">
+          <b>ZERO POINT</b>
+          <span>24-ZONE DUEL PUZZLE</span>
+        </div>
+      </div>
+
+      <div class="topmeta">
+        <button class="chip chip--stage" id="stageBtn" aria-label="ステージ選択">
+          <span>STAGE</span><b id="stageNo">01</b><em>/ 08</em>
+        </button>
+        <div class="chip chip--turn"><span>TURN</span><b id="turnNo">1</b><em id="turnMax">/ 2</em></div>
+        <div class="chip chip--action"><span>手数</span><b id="actionNo">0</b><em id="parNo">/ 最短 3</em></div>
+        <div class="chip chip--time" id="timerChip"><span>TIME</span><b id="timer">00:00</b></div>
+      </div>
+
+      <div class="topactions">
+        <button class="iconbtn" id="helpBtn" title="ルール" aria-label="ルール">?</button>
+        <button class="iconbtn" id="hintBtn" title="最適解 (H)" aria-label="最適解を見る">✦</button>
+        <button class="iconbtn" id="logBtn" title="ログ" aria-label="ログを開く">≡</button>
+        <button class="iconbtn" id="soundBtn" title="サウンド (M)" aria-label="サウンド切替">♪</button>
+        <button class="iconbtn" id="restartBtn" title="リトライ (R)" aria-label="リトライ">↻</button>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="arena" id="arena">
+        <div class="duelbar">
+          <div class="hud hud--enemy" id="enemyHud">
+            <div class="hud__avatar" aria-hidden="true">☠</div>
+            <div class="hud__main">
+              <div class="hud__row">
+                <span class="hud__name" id="enemyName">亡霊剣士</span>
+                <span class="hud__tag" id="enemyTitle">WRAITH BLADE</span>
+              </div>
+              <div class="hud__row hud__lprow">
+                <span class="hud__label">LP</span>
+                <b class="hud__lp" id="enemyLp">2000</b>
+                <span class="hud__meta" id="enemyMeta">手札 0 · 山 0 · 墓 0</span>
+              </div>
+              <div class="lpbar lpbar--enemy"><i id="enemyLpBar"></i></div>
+            </div>
+          </div>
+
+          <div class="center-meta">
+            <span class="center-meta__eyebrow" id="phaseLabel">YOUR TURN</span>
+            <div class="center-meta__turn"><b id="roundNo">01</b><span>ROUND</span></div>
+            <span class="center-meta__hint" id="centerHint">手札を選べ</span>
+            <span class="center-meta__clock" id="clock" aria-label="経過時間">00:00</span>
+          </div>
+
+          <div class="hud hud--player" id="playerHud">
+            <div class="hud__avatar" aria-hidden="true">◆</div>
+            <div class="hud__main">
+              <div class="hud__row">
+                <span class="hud__name">あなた</span>
+                <span class="hud__tag">DUELIST</span>
+              </div>
+              <div class="hud__row hud__lprow">
+                <span class="hud__label">LP</span>
+                <b class="hud__lp" id="playerLp">4000</b>
+                <span class="hud__meta" id="playerMeta">手札 2 · 山 0 · 墓 0</span>
+              </div>
+              <div class="lpbar lpbar--player"><i id="playerLpBar"></i></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="board-wrap">
+          <div class="board-decoration" aria-hidden="true">
+            <span class="board-decoration__line"></span>
+            <span class="board-decoration__word">ZERO&nbsp;POINT</span>
+            <span class="board-decoration__line"></span>
+          </div>
+          <div class="board" id="board" role="grid" aria-label="24ゾーンデュエルフィールド"></div>
+        </div>
+      </section>
+
+      <aside class="side" id="side">
+        <div class="side__head">
+          <span>MISSION</span>
+          <button class="side__close" id="sideClose" aria-label="閉じる">×</button>
+        </div>
+        <div class="mission">
+          <div class="mission__no" id="missionNo">STAGE 01</div>
+          <h1 class="mission__name" id="missionName">初撃</h1>
+          <div class="mission__en" id="missionEn">FIRST CONTACT</div>
+          <p class="mission__objective" id="missionObjective">相手LPを0にせよ。</p>
+          <div class="mission__stats">
+            <div><span>最短</span><b id="missionPar">3</b><em>手</em></div>
+            <div><span>制限</span><b id="missionTurns">2</b><em>ターン</em></div>
+            <div><span>難易度</span><b id="missionDiff">★</b></div>
+          </div>
+          <p class="mission__tip" id="missionTip">召喚したモンスターは、そのターンに攻撃できる。</p>
+          <div class="mission__actions">
+            <button class="btn btn--ghost btn--small" id="helpBtn2">ルール</button>
+            <button class="btn btn--ghost btn--small" id="solutionBtn">最適解</button>
+          </div>
+        </div>
+
+        <div class="side__head side__head--log"><span>DUEL LOG</span><span class="live-dot"></span></div>
+        <div class="log" id="log" aria-live="polite"></div>
+
+        <div class="side__footer">
+          <button class="btn btn--end" id="endTurnBtn2">TURN END<small>ターン終了</small></button>
+        </div>
+      </aside>
+    </main>
+
+    <footer class="handbar">
+      <div class="tray" id="tray" aria-live="polite">
+        <div class="tray__hint" id="trayHint">手札のカードを選択</div>
+        <div class="tray__buttons" id="trayButtons"></div>
+        <button class="btn btn--end btn--compact" id="endTurnBtn">TURN END<small>ターン終了</small></button>
+      </div>
+      <div class="hand-head">
+        <span class="hand-head__label">HAND <b id="handCount">2</b></span>
+        <div class="hand-head__legend"><i class="dot dot--monster"></i>MONSTER <i class="dot dot--spell"></i>SPELL <i class="dot dot--trap"></i>TRAP</div>
+        <button class="hand-head__stages" id="stageBtn2">STAGES</button>
+      </div>
+      <div class="hand" id="hand" aria-label="手札"></div>
+    </footer>
+  </div>
+
+  <div class="drawer-scrim" id="drawerScrim"></div>
+  <canvas class="fx" id="fx" aria-hidden="true"></canvas>
+  <div class="toast-stack" id="toastStack"></div>
+  <div class="modal-root" id="modalRoot"></div>
+
+  <noscript>このゲームを遊ぶには JavaScript を有効にしてください。</noscript>
+
+  <script src="js/cards.js"></script>
+  <script src="js/engine.js"></script>
+  <script src="js/puzzles.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
