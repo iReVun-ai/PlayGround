@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#070d16" />
+  <meta name="description" content="24ゾーン・8000LP・裏側守備セットあり。兄を倒せ、最速でLPを0にしろ。" />
+  <title>最速LP0デュエル | 24 ZONE DUEL</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230b1420'/%3E%3Crect x='8' y='8' width='48' height='48' rx='8' fill='none' stroke='%23e9c879' stroke-width='3'/%3E%3Ctext x='32' y='43' font-size='28' text-anchor='middle' fill='%23e9c879' font-family='serif'%3E24%3C/text%3E%3C/svg%3E" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&family=Shippori+Mincho+B1:wght@700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div id="app">
+    <header class="hud">
+      <div class="duelist opponent" id="oppHud">
+        <div class="avatar opp-avatar">兄</div>
+        <div class="duelist-main">
+          <div class="duelist-top">
+            <span class="duelist-name">兄</span>
+            <span class="hand-pill">手札 <b id="oppHand">5</b></span>
+          </div>
+          <div class="lp-line">
+            <span class="lp-value" id="oppLP">8000</span>
+            <span class="lp-unit">LP</span>
+          </div>
+          <div class="lp-track"><div class="lp-fill opp" id="oppBar"></div></div>
+          <div class="piles">
+            <span>山札 <b id="oppDeck">29</b></span>
+            <span>墓地 <b id="oppGrave">0</b></span>
+            <span>EX <b id="oppExtra">2</b></span>
+          </div>
+        </div>
+        <div class="taunt" id="oppTaunt" aria-live="polite"></div>
+      </div>
+
+      <div class="clock">
+        <div class="clock-kicker">SPEED DUEL TIMER</div>
+        <div class="clock-time" id="timer">0:00.0</div>
+        <div class="clock-turn" id="turnLabel">TURN 1 · あなたのターン</div>
+        <div class="clock-best" id="bestLabel">BEST --:--.-</div>
+      </div>
+
+      <div class="duelist player" id="meHud">
+        <div class="avatar me-avatar">私</div>
+        <div class="duelist-main">
+          <div class="duelist-top">
+            <span class="duelist-name">あなた</span>
+            <span class="hand-pill">手札 <b id="meHand">5</b></span>
+          </div>
+          <div class="lp-line">
+            <span class="lp-value" id="meLP">8000</span>
+            <span class="lp-unit">LP</span>
+          </div>
+          <div class="lp-track"><div class="lp-fill me" id="meBar"></div></div>
+          <div class="piles">
+            <span>山札 <b id="meDeck">29</b></span>
+            <span>墓地 <b id="meGrave">0</b></span>
+            <span>EX <b id="meExtra">2</b></span>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main">
+      <section class="board-col">
+        <div class="board-top">
+          <div class="phase-pill" id="phasePill">MAIN PHASE</div>
+          <div class="board-tools">
+            <button class="ghost-btn" id="rulesBtn" type="button">ルール</button>
+            <button class="ghost-btn" id="soundBtn" type="button" aria-label="サウンドを切り替える" title="サウンド">♪</button>
+            <button class="ghost-btn" id="restartBtn" type="button">リスタート</button>
+          </div>
+        </div>
+
+        <div class="board-shell" id="boardShell">
+          <div class="board" id="board" aria-label="24ゾーンのデュエルフィールド"></div>
+          <div class="board-fx" id="boardFx" aria-hidden="true"></div>
+        </div>
+
+        <div class="prompt" id="prompt">
+          <span class="prompt-dot" aria-hidden="true"></span>
+          <span id="promptText">決闘開始を待っています</span>
+          <button class="prompt-cancel" id="cancelBtn" type="button" hidden>キャンセル</button>
+        </div>
+
+        <div class="command-bar">
+          <div class="action-dock" id="actionDock"></div>
+          <div class="command-actions">
+            <button class="cmd-btn ex" id="extraBtn" type="button"><span class="cmd-tag">EX</span>エクストラ</button>
+            <button class="cmd-btn end" id="endTurnBtn" type="button">ターン終了</button>
+          </div>
+        </div>
+
+        <div class="hand" id="hand" aria-label="手札"></div>
+        <div class="hand-hint">カードをタップして選択 ／ 攻撃表示のモンスターで相手を攻撃</div>
+      </section>
+
+      <aside class="side-col">
+        <div class="side-head">
+          <span class="side-title">DUEL LOG</span>
+          <span class="side-sub" id="sideSub">24 ZONES / 8000 LP</span>
+        </div>
+        <div class="log" id="log" aria-live="polite"></div>
+
+        <div class="record-card">
+          <div class="record-label">FASTEST CLEAR</div>
+          <div class="record-time" id="bestRecord">--:--.-</div>
+          <div class="record-turns" id="bestTurns">記録なし</div>
+        </div>
+
+        <div class="bro-card">
+          <div class="bro-name">兄の記録</div>
+          <div class="bro-record">1:35.0 / 5ターン</div>
+          <div class="bro-line">「複雑だろうが、最速でLPを0にすればいい」</div>
+        </div>
+      </aside>
+    </main>
+  </div>
+
+  <div id="modalRoot"></div>
+
+  <script src="cards.js"></script>
+  <script src="game-core.js"></script>
+  <script src="game-render.js"></script>
+  <script src="game-modals.js"></script>
+  <script src="game-ai.js"></script>
+  <script src="game-boot.js"></script>
+</body>
+</html>
