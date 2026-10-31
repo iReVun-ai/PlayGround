@@ -1654,6 +1654,65 @@
     if (destCard) setTimeout(() => { destCard.style.opacity = ""; }, 430);
   }
 
+  async function animateAttackFlight(attacker, targetEl, pink = false) {
+    if (reduceMotion) {
+      await wait(180);
+      return;
+    }
+    const fromEl = zoneElOf(attacker);
+    if (!fromEl || !targetEl) {
+      await wait(180);
+      return;
+    }
+    const fromRect = fromEl.getBoundingClientRect();
+    const toRect = targetEl.getBoundingClientRect();
+    if (!fromRect.width || !toRect.width) {
+      await wait(180);
+      return;
+    }
+
+    const clone = createCardEl(attacker, "zone");
+    clone.classList.add("fly-card", "attack-fly");
+    clone.style.left = `${fromRect.left}px`;
+    clone.style.top = `${fromRect.top}px`;
+    clone.style.width = `${fromRect.width}px`;
+    clone.style.height = `${fromRect.height}px`;
+    clone.style.margin = "0";
+    document.body.appendChild(clone);
+
+    const sourceCard = fromEl.querySelector(".card");
+    if (sourceCard) sourceCard.style.opacity = "0";
+
+    const dx = toRect.left + toRect.width / 2 - (fromRect.left + fromRect.width / 2);
+    const dy = toRect.top + toRect.height / 2 - (fromRect.top + fromRect.height / 2);
+    const sx = clamp(toRect.width / fromRect.width, 0.9, 1.18);
+    const sy = clamp(toRect.height / fromRect.height, 0.9, 1.18);
+    const tilt = pink ? -4 : 4;
+
+    const anim = clone.animate(
+      [
+        { transform: "translate(0, 0) scale(1) rotate(0deg)", opacity: 1 },
+        { transform: `translate(${dx * 0.5}px, ${dy * 0.5 - 22}px) scale(1.12) rotate(${tilt}deg)`, opacity: 1, offset: 0.42 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy}) rotate(0deg)`, opacity: 1, offset: 0.56 },
+        { transform: `translate(${dx}px, ${dy}px) scale(${sx}, ${sy}) rotate(0deg)`, opacity: 1, offset: 0.64 },
+        { transform: `translate(${dx * 0.28}px, ${dy * 0.28 - 8}px) scale(1.06) rotate(${-tilt * 0.5}deg)`, opacity: 1, offset: 0.82 },
+        { transform: "translate(0, 0) scale(1) rotate(0deg)", opacity: 1 }
+      ],
+      { duration: 680, easing: "cubic-bezier(0.22, 0.8, 0.2, 1)" }
+    );
+
+    setTimeout(() => {
+      slashBetween(fromEl, targetEl, pink);
+      FX.burstAt(targetEl, pink ? "#ff3ea5" : "#55f4ff", 14, 4);
+    }, 360);
+
+    try {
+      await anim.finished;
+    } catch (_) {}
+    clone.remove();
+    if (sourceCard && sourceCard.isConnected) sourceCard.style.opacity = "";
+  }
+
   function floatAt(el, text, kind = "") {
     if (!el) return;
     const r = el.getBoundingClientRect();
@@ -1817,7 +1876,6 @@
     const attackerSide = attacker.owner;
     const defSide = other(attackerSide);
 
-    const atkEl = zoneElOf(attacker);
     const targetEl = direct ? $(`#hud-${defSide}`) : zoneElOf(target);
     addLog(
       direct
@@ -1830,25 +1888,7 @@
     Sound.attack();
     render();
 
-    if (!reduceMotion && atkEl && targetEl) {
-      const a = atkEl.getBoundingClientRect();
-      const b = targetEl.getBoundingClientRect();
-      const dx = (b.left + b.width / 2 - (a.left + a.width / 2)) * 0.28;
-      const dy = (b.top + b.height / 2 - (a.top + a.height / 2)) * 0.28;
-      const cardEl = atkEl.querySelector(".card");
-      if (cardEl) {
-        cardEl.animate(
-          [
-            { transform: "translate(0,0) scale(1)" },
-            { transform: `translate(${dx}px, ${dy}px) scale(1.12)`, offset: 0.45 },
-            { transform: "translate(0,0) scale(1)" }
-          ],
-          { duration: 380, easing: "cubic-bezier(0.3, 0.9, 0.3, 1)" }
-        );
-      }
-      slashBetween(atkEl, targetEl, attackerSide === "opponent");
-    }
-    await wait(360);
+    await animateAttackFlight(attacker, targetEl, attackerSide === "opponent");
 
     let negated = false;
     if (!direct || target) {
