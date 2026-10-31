@@ -1,0 +1,148 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#070a12" />
+  <meta name="description" content="24ゾーンの遊戯王風ワンキルパズル。裏側守備表示セットを使い、最短手数で相手LPを0にしろ。" />
+  <title>LP→0 | 24-ZONE OTK PUZZLE</title>
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow-a" aria-hidden="true"></div>
+  <div class="bg-glow bg-glow-b" aria-hidden="true"></div>
+
+  <div id="app">
+    <header class="topbar">
+      <div class="brand">
+        <div class="logo">LP<span class="logo-arrow">→</span>0</div>
+        <div class="brand-sub">
+          <span>24-ZONE OTK PUZZLE</span>
+          <span class="sep">/</span>
+          <span class="jp">遊戯王風</span>
+        </div>
+      </div>
+      <div class="top-actions">
+        <button class="icon-btn" id="btn-rules" type="button" aria-label="ルール">?</button>
+        <button class="icon-btn" id="btn-reset" type="button" aria-label="リセット">↺</button>
+      </div>
+    </header>
+
+    <main class="layout">
+      <section class="arena" aria-label="デュエルフィールド">
+        <div class="scoreboard">
+          <div class="lp-block player" id="player-lp-block">
+            <div class="lp-top">
+              <span class="lp-name">YOU</span>
+              <span class="lp-value" id="player-lp">8000</span>
+            </div>
+            <div class="lp-bar"><div class="lp-fill" id="player-lp-fill"></div></div>
+          </div>
+          <div class="turn-box">
+            <div class="turn-main" id="turn-label">TURN 1</div>
+            <div class="turn-sub" id="phase-label">YOUR TURN</div>
+          </div>
+          <div class="lp-block rival" id="opp-lp-block">
+            <div class="lp-top">
+              <span class="lp-name">RIVAL</span>
+              <span class="lp-value" id="opp-lp">8000</span>
+            </div>
+            <div class="lp-bar"><div class="lp-fill" id="opp-lp-fill"></div></div>
+          </div>
+        </div>
+
+        <div class="field-head">
+          <span class="field-tag rival-tag">RIVAL FIELD</span>
+          <span class="zone-count">24 SQUARE ZONES</span>
+        </div>
+
+        <div class="board-frame">
+          <div class="board" id="board" role="group" aria-label="24ゾーン"></div>
+          <div class="damage-layer" id="damage-layer" aria-hidden="true"></div>
+        </div>
+
+        <div class="field-foot">
+          <span class="field-tag player-tag">YOUR FIELD</span>
+          <div class="status-strip">
+            <div class="stat"><span class="stat-key">ACTIONS</span><span class="stat-val" id="action-count">0</span></div>
+            <div class="stat"><span class="stat-key">TIME</span><span class="stat-val" id="timer">0:00</span></div>
+            <div class="stat"><span class="stat-key">PAR</span><span class="stat-val" id="par-value">12</span></div>
+            <button class="mini-btn" id="btn-end" type="button">ターン終了</button>
+          </div>
+        </div>
+
+        <div class="hand-area">
+          <div class="hand-head">
+            <span class="hand-title">HAND <span class="hand-count" id="hand-count">8</span></span>
+            <button class="hint-btn" id="btn-hint" type="button">HINT <span id="hint-count"></span></button>
+          </div>
+          <div class="hand" id="hand" role="list" aria-label="手札"></div>
+          <div class="detail" id="card-detail" aria-live="polite">
+            カードを選択して、アクションを選んでください。
+          </div>
+        </div>
+
+        <div class="action-bar" id="action-bar" aria-live="polite"></div>
+      </section>
+
+      <aside class="sidebar" aria-label="パズル情報">
+        <section class="panel puzzle-panel">
+          <div class="panel-kicker">PUZZLE 01</div>
+          <h1 class="puzzle-name">兄の伏せ</h1>
+          <p class="puzzle-sub">BROTHER'S SET</p>
+          <p class="puzzle-copy">
+            兄が組んだ24ゾーンのワンキルパズル。LP8000、超重装の壁、そして伏せカード。
+            ひとつでも手順を誤れば、LPは0にならない。
+          </p>
+          <div class="objective-list">
+            <div class="objective" id="obj-set">
+              <span class="check" aria-hidden="true"></span>
+              <span>モンスターを裏側守備表示でセット</span>
+            </div>
+            <div class="objective" id="obj-lp">
+              <span class="check" aria-hidden="true"></span>
+              <span>相手LPを0以下にする</span>
+            </div>
+          </div>
+          <div class="hint-box" id="hint-box" hidden></div>
+        </section>
+
+        <section class="panel known-panel">
+          <h2>KNOWN INFO <span class="jp">既知の情報</span></h2>
+          <div class="known-card">
+            <div class="known-icon wall">🗿</div>
+            <div>
+              <div class="known-name">鉄壁の巨兵 <span class="badge def">DEF 8000</span></div>
+              <p>カード効果では破壊されない。このカードがいる限り直接攻撃できない。</p>
+            </div>
+          </div>
+          <div class="known-card">
+            <div class="known-icon trap">🪤</div>
+            <div>
+              <div class="known-name">炸裂装甲 <span class="badge set">伏せ</span></div>
+              <p>相手モンスターの攻撃宣言時に発動。攻撃を無効にし、そのモンスターを破壊する。</p>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel log-panel">
+          <h2>DUEL LOG</h2>
+          <div class="log" id="log" aria-live="polite"></div>
+        </section>
+
+        <section class="panel record-panel">
+          <h2>BEST RECORD</h2>
+          <div class="record" id="record">—</div>
+          <p class="record-note">手数が少ないほど上位。同手数ならタイム勝負。</p>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <div id="modal-root"></div>
+
+  <script src="game.js"></script>
+</body>
+</html>
