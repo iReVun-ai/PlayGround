@@ -1,0 +1,296 @@
+<!doctype html>
+<html lang="ja">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1" />
+  <meta name="theme-color" content="#05060d" />
+  <title>LP→0 — 24-ZONE CARD DUEL</title>
+  <meta name="description" content="11ai'ame vs H大好き分岐ｵﾚ。LPを0にするまで終わらない、24ゾーンのカードデュエル。" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Rajdhani:wght@400;500;600;700&family=Noto+Sans+JP:wght@400;500;700;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./styles.css" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%2305060d'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='Arial,sans-serif' font-size='27' font-weight='bold' fill='%235eeaff'%3ELP%3C/text%3E%3C/svg%3E" />
+</head>
+<body>
+  <canvas id="bgfx" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
+
+  <div id="app" class="app" hidden>
+    <header class="topbar">
+      <div class="brand" aria-label="LP to 0">
+        <span class="brand-lp">LP</span><span class="brand-arrow">→</span><span class="brand-zero">0</span>
+      </div>
+      <div class="topmeta">
+        <span class="chip" id="turnChip">TURN 01</span>
+        <span class="dot"></span>
+        <span class="chip chip--ghost">24-ZONE FIELD</span>
+        <span class="dot"></span>
+        <span class="top-duelists">11ai'ame <em>vs</em> H大好き分岐ｵﾚ</span>
+      </div>
+      <div class="topactions">
+        <button class="iconbtn" id="btnSound" type="button" aria-label="サウンド切替" title="サウンド">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9v6h4l5 4V5L8 9H4Z" fill="currentColor"/><path class="wave" d="M16 8.5a5 5 0 0 1 0 7M18.5 6a8.5 8.5 0 0 1 0 12" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+        <button class="iconbtn" id="btnRules" type="button" aria-label="遊び方" title="遊び方">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.7"/><path d="M9.6 9.2a2.5 2.5 0 0 1 4.9.7c0 1.7-2.4 2-2.4 3.6" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/><circle cx="12.1" cy="17" r="1.1" fill="currentColor"/></svg>
+        </button>
+        <button class="iconbtn mobile-only" id="btnLog" type="button" aria-label="デュエルログ" title="ログ">
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 6h14M5 12h14M5 18h9" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <main class="stage">
+      <div class="arena-column">
+        <section class="duelist duelist--enemy" id="enemyPlate" aria-label="対戦相手">
+          <div class="avatar avatar--enemy" id="enemyAvatar"></div>
+          <div class="duelist-main">
+            <div class="duelist-line">
+              <h2 class="duelist-name">H大好き分岐ｵﾚ</h2>
+              <span class="tag tag--rival">RIVAL</span>
+              <span class="deckname">ABYSSAL REQUIEM <i>深淵の鎮魂歌</i></span>
+            </div>
+            <div class="lp-row">
+              <span class="lp-label">LP</span>
+              <div class="lpbar" role="progressbar" aria-label="相手LP" aria-valuemin="0" aria-valuemax="8000" aria-valuenow="8000" id="enemyLpBar">
+                <span class="lpbar-fill" id="enemyLpFill"></span>
+                <span class="lpbar-shine"></span>
+              </div>
+              <span class="lp-value" id="enemyLp">8000</span>
+            </div>
+          </div>
+          <div class="counters">
+            <div><b id="enemyHand">5</b><span>HAND</span></div>
+            <div><b id="enemyDeck">25</b><span>DECK</span></div>
+            <div><b id="enemyGrave">0</b><span>GRAVE</span></div>
+          </div>
+          <div class="plate-scan" aria-hidden="true"></div>
+        </section>
+
+        <section class="board" id="board" aria-label="24ゾーンのフィールド">
+          <div class="board-aura" aria-hidden="true"></div>
+          <div class="row-label row-label--enemy"><span>ARCANA</span><b>01—06</b></div>
+          <div class="board-row" id="row-ai-spell" data-side="ai" data-row="spell"></div>
+          <div class="row-label row-label--enemy"><span>VANGUARD</span><b>07—12</b></div>
+          <div class="board-row" id="row-ai-monster" data-side="ai" data-row="monster"></div>
+
+          <div class="board-center" id="boardCenter">
+            <div class="turn-orb">
+              <svg viewBox="0 0 120 120" class="orb-ring" aria-hidden="true">
+                <circle cx="60" cy="60" r="52" fill="none" stroke="currentColor" stroke-opacity=".22" stroke-width="1"/>
+                <circle cx="60" cy="60" r="44" fill="none" stroke="currentColor" stroke-opacity=".12" stroke-dasharray="2 7" stroke-width="1.2"/>
+                <path d="M60 6 L64 16 L60 26 L56 16 Z" fill="currentColor" opacity=".7"/>
+                <path d="M60 94 L64 104 L60 114 L56 104 Z" fill="currentColor" opacity=".7"/>
+              </svg>
+              <div class="orb-core">
+                <span class="orb-turn" id="orbTurn">01</span>
+                <span class="orb-label" id="orbLabel">YOUR TURN</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="row-label row-label--player"><span>VANGUARD</span><b>13—18</b></div>
+          <div class="board-row" id="row-player-monster" data-side="player" data-row="monster"></div>
+          <div class="row-label row-label--player"><span>ARCANA</span><b>19—24</b></div>
+          <div class="board-row" id="row-player-spell" data-side="player" data-row="spell"></div>
+        </section>
+
+        <section class="duelist duelist--player" id="playerPlate" aria-label="あなた">
+          <div class="avatar avatar--player" id="playerAvatar"></div>
+          <div class="duelist-main">
+            <div class="duelist-line">
+              <h2 class="duelist-name">11ai'ame</h2>
+              <span class="tag tag--you">YOU</span>
+              <span class="deckname">SOLAR COVENANT <i>太陽の誓約</i></span>
+            </div>
+            <div class="lp-row">
+              <span class="lp-label">LP</span>
+              <div class="lpbar" role="progressbar" aria-label="自分のLP" aria-valuemin="0" aria-valuemax="8000" aria-valuenow="8000" id="playerLpBar">
+                <span class="lpbar-fill" id="playerLpFill"></span>
+                <span class="lpbar-shine"></span>
+              </div>
+              <span class="lp-value" id="playerLp">8000</span>
+            </div>
+          </div>
+          <div class="counters">
+            <div><b id="playerHand">5</b><span>HAND</span></div>
+            <div><b id="playerDeck">25</b><span>DECK</span></div>
+            <div><b id="playerGrave">0</b><span>GRAVE</span></div>
+          </div>
+          <div class="plate-scan" aria-hidden="true"></div>
+        </section>
+
+        <div class="hintbar" id="hint" aria-live="polite">
+          <span class="hint-icon">◇</span>
+          <span id="hintText">手札からカードを選択してデュエルを進めよう。</span>
+        </div>
+      </div>
+
+      <aside class="rail" aria-label="情報">
+        <section class="inspect" id="inspect">
+          <div class="rail-head"><span>INSPECT</span><b>カード詳細</b></div>
+          <div class="inspect-empty" id="inspectEmpty">
+            <div class="inspect-glyph">◇</div>
+            <p>カードをタップ／ホバーして詳細を確認。盤面の光るゾーンが次の行動の候補です。</p>
+          </div>
+          <div class="inspect-body" id="inspectBody" hidden></div>
+        </section>
+        <section class="logpanel">
+          <div class="rail-head"><span>DUEL LOG</span><b>戦況</b></div>
+          <div class="loglist" id="logList" aria-live="polite"></div>
+        </section>
+      </aside>
+    </main>
+
+    <footer class="handbar">
+      <div class="handhead">
+        <div class="hand-title">
+          <span>YOUR HAND</span>
+          <b id="handCount">5</b>
+        </div>
+        <div class="turnstats">
+          <span class="stat" id="statSummon"><i>SUMMON</i><b>0 / 1</b></span>
+          <span class="stat" id="statTrap"><i>TRAP SET</i><b>0 / 1</b></span>
+          <span class="stat stat--phase" id="statPhase"><i>PHASE</i><b>MAIN / BATTLE</b></span>
+        </div>
+      </div>
+      <div class="hand-shell">
+        <div class="hand" id="hand" aria-label="自分の手札"></div>
+        <div class="actions" id="actions"></div>
+      </div>
+    </footer>
+  </div>
+
+  <div class="screen title-screen" id="titleScreen">
+    <div class="title-bg" aria-hidden="true">
+      <div class="title-ring title-ring--one"></div>
+      <div class="title-ring title-ring--two"></div>
+      <div class="title-ring title-ring--three"></div>
+      <div class="title-grid"></div>
+    </div>
+    <div class="title-inner">
+      <div class="title-kicker">OMGITHUB PRESENTS · CARD DUEL</div>
+      <h1 class="title-logo" aria-label="LP to 0">
+        <span class="logo-lp">LP</span><span class="logo-arrow">→</span><span class="logo-zero">0</span>
+      </h1>
+      <p class="title-sub">24のゾーン、2人のデュエリスト、LPがゼロになるまで。</p>
+
+      <div class="vs-lockup">
+        <article class="combatant combatant--player">
+          <div class="combatant-avatar" id="titleAvatarPlayer"></div>
+          <div class="combatant-copy">
+            <span class="combatant-tag">PLAYER / 太陽の誓約</span>
+            <h2>11ai'ame</h2>
+            <p>SOLAR COVENANT</p>
+          </div>
+          <span class="combatant-side">01</span>
+        </article>
+        <div class="vs-mark">
+          <span>VS</span>
+          <i></i>
+        </div>
+        <article class="combatant combatant--rival">
+          <div class="combatant-avatar" id="titleAvatarAi"></div>
+          <div class="combatant-copy">
+            <span class="combatant-tag">RIVAL / 深淵の鎮魂歌</span>
+            <h2>H大好き分岐ｵﾚ</h2>
+            <p>ABYSSAL REQUIEM</p>
+          </div>
+          <span class="combatant-side">02</span>
+        </article>
+      </div>
+
+      <div class="title-actions">
+        <button class="primarybtn" id="btnStart" type="button">
+          <span class="primarybtn-sub">TAP TO DUEL</span>
+          <span class="primarybtn-main">DUEL START</span>
+        </button>
+        <button class="ghostbtn" id="btnRulesTitle" type="button">遊び方 / RULES</button>
+        <button class="ghostbtn ghostbtn--icon" id="btnSoundTitle" type="button" aria-label="サウンド切替">
+          <span class="sound-state">SOUND ON</span>
+        </button>
+      </div>
+
+      <div class="title-foot">
+        <span>24 ZONES</span><i></i><span>LP 8000 → 0</span><i></i><span>SUMMON / SET / ATTACK</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="modal" id="rulesModal" hidden>
+    <div class="modal-backdrop" data-close="rules"></div>
+    <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="rulesTitle">
+      <button class="modal-close" type="button" data-close="rules" aria-label="閉じる">×</button>
+      <div class="modal-kicker">HOW TO DUEL</div>
+      <h2 id="rulesTitle">LPを0にすれば勝ち。</h2>
+      <div class="rules-grid">
+        <section>
+          <h3><b>01</b> 24ゾーン</h3>
+          <p>各プレイヤーは12ゾーンを使用。手前6つが<strong>モンスターゾーン</strong>、奥6つが<strong>罠ゾーン</strong>。合計24ゾーンが戦場です。</p>
+        </section>
+        <section>
+          <h3><b>02</b> 召喚とセット</h3>
+          <p>手札のモンスターを空きゾーンへ<strong>召喚</strong>（表・攻撃表示）または<strong>セット</strong>（裏・守備表示）。召喚権は1ターンに1回。罠カードも1枚までセットできます。</p>
+        </section>
+        <section>
+          <h3><b>03</b> 攻撃</h3>
+          <p>攻撃表示のモンスターで相手モンスターを攻撃。相手のATK（攻撃表示）／DEF（守備表示）を超えれば破壊。攻撃表示との戦闘では差分が<strong>戦闘ダメージ</strong>になります。相手モンスターがいなければダイレクトアタック。</p>
+        </section>
+        <section>
+          <h3><b>04</b> 魔法・罠</h3>
+          <p>魔法は手札から即発動。罠はセットしてから次のターン以降に自動発動します。罠ゾーンのカードは相手から見えません。</p>
+        </section>
+        <section>
+          <h3><b>05</b> キーワード</h3>
+          <p><strong>貫通</strong>=守備モンスターへの超過ダメージ。 <strong>シールド</strong>=戦闘ダメージ無効。 <strong>挑発</strong>=このカードを優先攻撃。 <strong>ドレイン</strong>=与えた戦闘ダメージ分回復。</p>
+        </section>
+        <section>
+          <h3><b>06</b> 勝利条件</h3>
+          <p>相手のLPを0にする。または相手をデッキ切れにする。先攻1ターン目は攻撃できません。さあ、LP→0のデュエルを始めよう。</p>
+        </section>
+      </div>
+      <button class="primarybtn primarybtn--small" type="button" data-close="rules">UNDERSTOOD</button>
+    </div>
+  </div>
+
+  <div class="modal" id="logModal" hidden>
+    <div class="modal-backdrop" data-close="log"></div>
+    <div class="modal-card modal-card--log" role="dialog" aria-modal="true" aria-labelledby="logTitle">
+      <button class="modal-close" type="button" data-close="log" aria-label="閉じる">×</button>
+      <div class="modal-kicker">DUEL LOG</div>
+      <h2 id="logTitle">戦況</h2>
+      <div class="loglist loglist--modal" id="logListModal"></div>
+    </div>
+  </div>
+
+  <div class="screen result-screen" id="resultScreen" hidden>
+    <div class="result-burst" aria-hidden="true"></div>
+    <div class="result-card">
+      <div class="result-kicker" id="resultKicker">DUEL COMPLETE</div>
+      <h2 class="result-title" id="resultTitle">VICTORY</h2>
+      <p class="result-sub" id="resultSub">相手のLPを0にした。</p>
+      <div class="result-stats">
+        <div><span>TURNS</span><b id="resultTurns">0</b></div>
+        <div><span>LP LEFT</span><b id="resultLp">0</b></div>
+        <div><span>DAMAGE DEALT</span><b id="resultDamage">0</b></div>
+      </div>
+      <div class="result-actions">
+        <button class="primarybtn primarybtn--small" id="btnRematch" type="button">REMATCH</button>
+        <button class="ghostbtn" id="btnTitle" type="button">TITLE</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card-detail" id="cardDetail" role="dialog" aria-label="カード詳細" hidden>
+    <button class="cd-close" id="cardDetailClose" type="button" aria-label="詳細を閉じる">×</button>
+    <div id="cardDetailBody"></div>
+  </div>
+
+  <div class="banner" id="banner" aria-live="assertive"></div>
+  <div class="toast" id="toast" role="status"></div>
+  <div class="fx-layer" id="fxLayer" aria-hidden="true"></div>
+
+  <script type="module" src="./js/app.js"></script>
+</body>
+</html>
